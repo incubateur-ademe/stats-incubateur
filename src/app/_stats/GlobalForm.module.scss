@@ -1,0 +1,18 @@
+.startup-card {}
+
+.startup-card--body {
+    height: 400px;
+    display: flex;
+
+    justify-content: center;
+    align-items: center;
+    background-color: var(--color-background);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+}
+
+.form {
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+}
