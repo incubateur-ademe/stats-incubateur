@@ -86,13 +86,7 @@ const RootLayout = ({ children }: PropsWithChildren) => {
                 <div className={styles.app}>
                   <DefaultHeader />
                   <ClientAnimate as="main" id="content" className={styles.content}>
-                    {config.env === "prod" ? (
-                      <SystemMessageDisplay code="construction" noRedirect />
-                    ) : config.maintenance ? (
-                      <SystemMessageDisplay code="maintenance" noRedirect />
-                    ) : (
-                      children
-                    )}
+                    {config.maintenance ? <SystemMessageDisplay code="maintenance" noRedirect /> : children}
                   </ClientAnimate>
                   <DefaultFooter id="footer" />
                 </div>
