@@ -1,5 +1,6 @@
 import { FlatCompat } from "@eslint/eslintrc";
 import js from "@eslint/js";
+import path from "path";
 
 const nextFiles = [
   "page",
@@ -228,6 +229,13 @@ const config = [
         parserOptions: {
           project: "./scripts/tsconfig.json",
           tsconfigRootDir: import.meta.dirname,
+        },
+        settings: {
+          "import/resolver": {
+            typescript: {
+              project: path.resolve(import.meta.dirname, "./scripts"),
+            },
+          },
         },
       },
     ],

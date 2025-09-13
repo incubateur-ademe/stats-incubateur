@@ -1,67 +1,25 @@
 "use client";
 
-import { fr } from "@codegouvfr/react-dsfr";
-import { type ButtonProps } from "@codegouvfr/react-dsfr/Button";
-import ButtonsGroup from "@codegouvfr/react-dsfr/ButtonsGroup";
-import Card from "@codegouvfr/react-dsfr/Card";
 import Select from "@codegouvfr/react-dsfr/Select";
-import Tooltip from "@codegouvfr/react-dsfr/Tooltip";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { getISOWeek, getISOWeekYear } from "date-fns";
-import { debounce } from "lodash";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useRef } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import z from "zod";
 
-import { MuiBarLineChart } from "@/components/charts/MuiBarLineChart";
-import { ClientOnly } from "@/components/utils/ClientOnly";
-import { Loader } from "@/components/utils/Loader";
-import { Grid, GridCol, Icon } from "@/dsfr";
-import { Text } from "@/dsfr/base/Typography";
+import { Grid, GridCol } from "@/dsfr";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { type StartupConfig } from "@/startup-types";
 
-import { fetchStats } from "./action";
 import styles from "./GlobalForm.module.scss";
-import { type EnrichedStats, type StatInput, statInputSchema } from "./types";
-
-interface StartupConfigWihData extends StartupConfig {
-  data?: EnrichedStats;
-}
-
-interface GlobalFormProps {
-  startups: StartupConfig[];
-}
-
-const FORMATERS = {
-  day: new Intl.DateTimeFormat("fr-FR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }),
-  month: new Intl.DateTimeFormat("fr-FR", {
-    year: "numeric",
-    month: "2-digit",
-  }),
-  week: new Intl.DateTimeFormat("fr-FR"),
-  year: new Intl.DateTimeFormat("fr-FR", {
-    year: "numeric",
-  }),
-};
-
-const DEFAULT_PERIODICITY: StatInput["periodicity"] = "month";
-
-const dateFormatter = (date: Date, periodicity: keyof typeof FORMATERS = DEFAULT_PERIODICITY) => {
-  if (periodicity === "week") {
-    const week = getISOWeek(date);
-    const year = getISOWeekYear(date);
-    return `Semaine ${week} (${year})`;
-  }
-  return FORMATERS[periodicity].format(date);
-};
+import { StartupCard } from "./StartupCard";
+import { type StatInput, statInputSchema, type StatPeriodicity } from "./types";
 
 z.config(z.locales.fr());
 const formSchema = statInputSchema;
 type FormType = StatInput;
+
+const DEFAULT_PERIODICITY: StatInput["periodicity"] = "month";
 
 const SINCE_OPTIONS: Record<FormType["periodicity"], Array<{ label: string; value: number }>> = {
   day: [
@@ -91,152 +49,105 @@ const SINCE_OPTIONS: Record<FormType["periodicity"], Array<{ label: string; valu
   ],
 };
 
-const TICK_INTERVALS: Record<FormType["periodicity"], number> = {
-  day: 3,
-  month: 2,
-  week: 2,
-  year: 1,
-};
+// ------------------ Composant carte (1 requête) ------------------
+
+// ------------------ Forme globale ------------------
+
+interface GlobalFormProps {
+  startups: StartupConfig[];
+}
 
 export const GlobalForm = ({ startups }: GlobalFormProps) => {
-  const [startupWithData, setStartupWithData] = useState<StartupConfigWihData[]>(startups);
-  const [startupLoadings, setStartupLoadings] = useState<boolean[]>(Array(startups.length).fill(true));
-  const [startupErrors, setStartupErrors] = useState<string[]>(Array(startups.length).fill(""));
-
-  const allStartupIds = useMemo(() => startups.map(s => s.id), [startups]);
-
-  const loadStartupData = useCallback(
-    async (startup: StartupConfigWihData, index: number, input: StatInput): Promise<StartupConfigWihData> => {
-      console.log(`Loading data for startup: ${startup.id}`);
-
-      try {
-        const response = await fetchStats(startup.id, input);
-        if (!response.ok) {
-          console.warn(`Error fetching stats for ${startup.id}:`, response.error);
-          setStartupErrors(prev => {
-            const newErrors = [...prev];
-            newErrors[index] = response.error || "Erreur lors de la récupération des données.";
-            return newErrors;
-          });
-          return { ...startup };
-        }
-
-        setStartupErrors(prev => {
-          const newErrors = [...prev];
-          newErrors[index] = "";
-          return newErrors;
-        });
-
-        return { ...startup, data: response.data };
-      } catch (error) {
-        console.warn(`Error fetching stats for ${startup.id}:`, error);
-        setStartupErrors(prev => {
-          const newErrors = [...prev];
-          newErrors[index] = "Erreur lors de la récupération des données.";
-          return newErrors;
-        });
-        return { ...startup };
-      }
-    },
-    [setStartupErrors],
-  );
-
-  const fetchStartups = useCallback(
-    async (ids: string[] = allStartupIds, input: StatInput) => {
-      const startupIndexes = ids
-        .map(id => startups.findIndex(s => s.id === id))
-        .filter(index => index !== -1)
-        .sort();
-      setStartupLoadings(prev => {
-        const newLoadings = [...prev];
-        for (const index of startupIndexes) {
-          newLoadings[index] = true;
-        }
-        return newLoadings;
-      });
-
-      const filteredStartupWithData = startupIndexes.map(index => ({
-        ...startups[index],
-      }));
-
-      const promises = filteredStartupWithData.map((s, i) =>
-        loadStartupData(s, i, input).then(updated => ({ index: i, updated })),
-      );
-
-      const results = await Promise.all(promises);
-
-      setStartupWithData(prev => {
-        const updated = [...prev];
-        for (const { index, updated: updatedStartup } of results) {
-          updated[index] = updatedStartup;
-          setStartupLoadings(prev => {
-            const newLoadings = [...prev];
-            newLoadings[index] = false;
-            return newLoadings;
-          });
-        }
-        return updated;
-      });
-    },
-    [allStartupIds, loadStartupData, startups],
-  );
-
-  const methods = useForm({
+  const methods = useForm<FormType>({
     resolver: zodResolver(formSchema),
     mode: "onChange",
-    defaultValues: {
-      periodicity: DEFAULT_PERIODICITY,
-    },
+    defaultValues: { periodicity: DEFAULT_PERIODICITY, since: undefined },
   });
 
   const {
     register,
     watch,
-    trigger,
-    getValues,
-    resetField,
     formState: { errors },
+    resetField,
+    setValue,
   } = methods;
 
   const watchedPeriodicity = watch("periodicity");
-  const watchedSince = watch("since");
+  const watchedSince = watch("since"); // number | undefined
 
+  // On "debounce" juste les valeurs du formulaire pour limiter les refetch
+  const debouncedInput = useDebouncedValue<StatInput>({ periodicity: watchedPeriodicity, since: watchedSince }, 300);
+
+  const gridBase = useMemo(() => (["year", "month"].includes(watchedPeriodicity) ? 6 : 12), [watchedPeriodicity]);
+
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const initializedFromURL = useRef(false);
+
+  // 1) Au montage: lire la query et initialiser le formulaire
   useEffect(() => {
-    void fetchStartups(allStartupIds, { periodicity: watchedPeriodicity, since: watchedSince });
+    if (initializedFromURL.current) return;
+
+    const qpPeriodicity = searchParams.get("periodicity");
+    const qpSinceRaw = searchParams.get("since");
+
+    // valeurs candidates depuis l’URL
+    const candidatePeriodicity = (["day", "week", "month", "year"] as const).includes(qpPeriodicity as StatPeriodicity)
+      ? (qpPeriodicity as FormType["periodicity"])
+      : DEFAULT_PERIODICITY;
+
+    const candidateSince =
+      qpSinceRaw !== null && qpSinceRaw !== ""
+        ? Number.isNaN(parseInt(qpSinceRaw, 10))
+          ? undefined
+          : parseInt(qpSinceRaw, 10)
+        : undefined;
+
+    // on applique seulement si ça diffère du form courant
+    const needSetPeriodicity = candidatePeriodicity !== methods.getValues("periodicity");
+    const needSetSince = candidateSince !== methods.getValues("since");
+
+    if (needSetPeriodicity) setValue("periodicity", candidatePeriodicity, { shouldValidate: true });
+    if (needSetSince) setValue("since", candidateSince, { shouldValidate: true });
+
+    initializedFromURL.current = true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [searchParams, setValue]);
 
-  // Ton fetch de données
-  const fetchFn = async (data: FormType) => {
-    console.log("Fetching data with:", data);
-    await fetchStartups(allStartupIds, data);
-  };
-
-  // Débounce du fetchFn
-  const debouncedFetch = useMemo(() => debounce(fetchFn, 300), []);
-
+  // 2) À chaque changement du form: pousser l’URL (sans historiques multiples, sans scroll)
   useEffect(() => {
-    const run = async () => {
-      const isValid = await trigger();
-      if (isValid) {
-        const values = getValues();
-        await debouncedFetch(values);
-      }
-    };
+    if (!initializedFromURL.current) return; // attendre l'init depuis l’URL
 
-    void run();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchedPeriodicity, watchedSince]);
+    const params = new URLSearchParams();
+
+    // n’inclure QUE les non-défauts
+    if (watchedPeriodicity !== DEFAULT_PERIODICITY) {
+      params.set("periodicity", watchedPeriodicity);
+    }
+    if (watchedSince !== undefined && watchedSince !== null && `${watchedSince}`.length > 0) {
+      params.set("since", String(watchedSince));
+    }
+
+    const nextSearch = params.toString();
+    const currentSearch = searchParams.toString();
+
+    // éviter les navigations inutiles
+    if (nextSearch === currentSearch) return;
+
+    const nextUrl = nextSearch ? `${pathname}?${nextSearch}` : pathname;
+    router.replace(nextUrl, { scroll: false });
+  }, [watchedPeriodicity, watchedSince, pathname, router, searchParams]);
 
   return (
     <>
       <FormProvider {...methods}>
-        {/* <ReactHookFormDebug /> */}
         <form className={styles.form}>
           <Select
             state={errors?.periodicity ? "error" : "default"}
             stateRelatedMessage={errors?.periodicity?.message}
             nativeSelectProps={{
+              defaultValue: DEFAULT_PERIODICITY,
               ...register("periodicity", {
                 deps: ["since"],
                 onChange: () => resetField("since"),
@@ -249,13 +160,13 @@ export const GlobalForm = ({ startups }: GlobalFormProps) => {
             <option value="month">Mensuelle</option>
             <option value="year">Annuelle</option>
           </Select>
+
           <Select
             state={errors?.since ? "error" : "default"}
             stateRelatedMessage={errors?.since?.message}
             nativeSelectProps={{
-              ...register("since", {
-                setValueAs: (v?: string) => (v ? parseInt(v) : void 0),
-              }),
+              defaultValue: "",
+              ...register("since", { setValueAs: (v?: string) => (v ? parseInt(v) : void 0) }),
             }}
             label="Depuis"
           >
@@ -269,98 +180,13 @@ export const GlobalForm = ({ startups }: GlobalFormProps) => {
           </Select>
         </form>
       </FormProvider>
+
       <Grid haveGutters>
-        {startups.map((startup, idx) => {
-          const s = startupWithData.find(d => d.id === startup.id);
-          if (!s) {
-            console.warn(`No data found for startup: ${startup.id}`);
-            return null;
-          }
-          return (
-            <GridCol
-              base={["year", "month"].includes(watchedPeriodicity) ? 6 : 12}
-              key={s.id}
-              className={styles["startup-card"]}
-            >
-              <Card
-                title={
-                  <div className="flex justify-between">
-                    <div className="flex gap-[1rem]">{s.name}</div>
-                    {startupErrors[idx] && (
-                      <ClientOnly>
-                        <Tooltip title={startupErrors[idx]}>
-                          <Icon icon="fr-icon-error-warning-fill" size="xl" color="text-default-error" />
-                        </Tooltip>
-                      </ClientOnly>
-                    )}
-                  </div>
-                }
-                titleAs="h3"
-                shadow
-                horizontal
-                size="large"
-                footer={
-                  <ButtonsGroup
-                    alignment="right"
-                    buttonsEquisized
-                    inlineLayoutWhen="always"
-                    isReverseOrder
-                    buttons={[
-                      {
-                        linkProps: {
-                          href: `/${s.id}`,
-                        },
-                        children: "Détails",
-                        priority: "secondary",
-                      },
-                      ...((s.website
-                        ? [
-                            {
-                              linkProps: {
-                                href: s.website,
-                                target: "_blank",
-                              },
-                              children: "Site",
-                              priority: "tertiary",
-                            },
-                          ]
-                        : []) as ButtonProps[]),
-                    ]}
-                  />
-                }
-                desc={
-                  <span className={styles["startup-card--body"]}>
-                    {startupLoadings[idx] ? (
-                      <Loader loading size="2em" />
-                    ) : startupErrors[idx] ? (
-                      <Text inline color={fr.colors.decisions.text.default.error.default}>
-                        {startupErrors[idx]}
-                      </Text>
-                    ) : s.data?.stats?.length ? (
-                      <MuiBarLineChart
-                        barData={s.data.stats.map(stat => stat.value)}
-                        lineData={s.data.stats.map(stat => stat.variation)}
-                        nameLine="Variation (%)"
-                        nameBar={s.data.description ?? "North Star metric"}
-                        x={s.data.stats.map(stat => dateFormatter(stat.date, watchedPeriodicity))}
-                        xTickInterval={TICK_INTERVALS[watchedPeriodicity]}
-                        xName="Date"
-                        barId="north-star"
-                        lineId="variation"
-                        barAxisWidth={100}
-                        lineValueFormatter={value => `${value}%`}
-                      />
-                    ) : (
-                      <Text inline variant="xl">
-                        Pas de données.
-                      </Text>
-                    )}
-                  </span>
-                }
-              />
-            </GridCol>
-          );
-        })}
+        {startups.map(s => (
+          <GridCol base={gridBase} key={s.id} className={styles["startup-card"]}>
+            <StartupCard startup={s} input={debouncedInput} />
+          </GridCol>
+        ))}
       </Grid>
     </>
   );

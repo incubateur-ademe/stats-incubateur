@@ -18,6 +18,7 @@ import { DsfrHead, getHtmlAttributes } from "@/dsfr-bootstrap/server-only-index"
 
 import { DefaultFooter } from "./DefaultFooter";
 import { DefaultHeader } from "./DefaultHeader";
+import { QueryProvider } from "./QueryProvider";
 import styles from "./root.module.scss";
 import { sharedMetadata } from "./shared-metadata";
 import { SystemMessageDisplay } from "./SystemMessageDisplay";
@@ -61,39 +62,41 @@ const RootLayout = ({ children }: PropsWithChildren) => {
         />
       </head>
       <body>
-        <AppRouterCacheProvider>
-          <DsfrProvider lang={lang}>
-            <MuiDsfrThemeProvider>
-              <SkeletonTheme
-                baseColor={fr.colors.decisions.background.contrast.grey.default}
-                highlightColor={fr.colors.decisions.background.contrast.grey.active}
-                borderRadius={fr.spacing("1v")}
-                duration={2}
-              >
-                <Display />
-                <SkipLinks
-                  links={[
-                    {
-                      anchor: `#${contentId}`,
-                      label: "Contenu",
-                    },
-                    {
-                      anchor: `#${footerId}`,
-                      label: "Pied de page",
-                    },
-                  ]}
-                />
-                <div className={styles.app}>
-                  <DefaultHeader />
-                  <ClientAnimate as="main" id="content" className={styles.content}>
-                    {config.maintenance ? <SystemMessageDisplay code="maintenance" noRedirect /> : children}
-                  </ClientAnimate>
-                  <DefaultFooter id="footer" />
-                </div>
-              </SkeletonTheme>
-            </MuiDsfrThemeProvider>
-          </DsfrProvider>
-        </AppRouterCacheProvider>
+        <QueryProvider>
+          <AppRouterCacheProvider>
+            <DsfrProvider lang={lang}>
+              <MuiDsfrThemeProvider>
+                <SkeletonTheme
+                  baseColor={fr.colors.decisions.background.contrast.grey.default}
+                  highlightColor={fr.colors.decisions.background.contrast.grey.active}
+                  borderRadius={fr.spacing("1v")}
+                  duration={2}
+                >
+                  <Display />
+                  <SkipLinks
+                    links={[
+                      {
+                        anchor: `#${contentId}`,
+                        label: "Contenu",
+                      },
+                      {
+                        anchor: `#${footerId}`,
+                        label: "Pied de page",
+                      },
+                    ]}
+                  />
+                  <div className={styles.app}>
+                    <DefaultHeader />
+                    <ClientAnimate as="main" id="content" className={styles.content}>
+                      {config.maintenance ? <SystemMessageDisplay code="maintenance" noRedirect /> : children}
+                    </ClientAnimate>
+                    <DefaultFooter id="footer" />
+                  </div>
+                </SkeletonTheme>
+              </MuiDsfrThemeProvider>
+            </DsfrProvider>
+          </AppRouterCacheProvider>
+        </QueryProvider>
       </body>
     </html>
   );

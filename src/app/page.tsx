@@ -30,10 +30,19 @@ const startupOrdered = STARTUPS.sort((a, b) => {
     id: s.id,
     name: s.name,
     website: s.website,
+    groups: s.groups,
   };
 });
 
 const Home = () => {
+  // const request = pvLivraisonTable.select({
+  //   view: "viw6wX4jpRH1BpSLw",
+  // });
+
+  // const pvs = await request.all();
+
+  // console.log("============", pvs[0]._rawJson?.fields?.Intitulé);
+
   return (
     <DsfrPage>
       <Container py="4w" fluid px="4w">

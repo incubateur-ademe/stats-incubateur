@@ -57,7 +57,15 @@ export const fetchStats = async (startupId: string, input: StatInput): Promise<S
   }
 
   const json = JSON.parse(await response.text(), function (key, value) {
-    if (key == "date") return new Date(Date.parse(value as string));
+    if (key == "date") {
+      if (typeof value === "string") {
+        return new Date(Date.parse(value));
+      } else if (typeof value === "number") {
+        return new Date(value);
+      } else {
+        return null;
+      }
+    }
     return value as unknown;
   }) as StatOuput;
 
