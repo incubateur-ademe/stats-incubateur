@@ -1,9 +1,12 @@
 import { Container } from "@/dsfr";
+import { DsfrPage } from "@/dsfr/layout/DsfrPage";
 
 const HealthZ = () => (
-  <Container my="4w">
-    <h1>App is up and running</h1>
-  </Container>
+  <DsfrPage>
+    <Container my="4w">
+      <h1>App is up and running</h1>
+    </Container>
+  </DsfrPage>
 );
 
 export default HealthZ;

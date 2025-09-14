@@ -15,7 +15,9 @@ import { ClientAnimate } from "@/components/utils/ClientAnimate";
 import { config } from "@/config";
 import { DsfrProvider } from "@/dsfr-bootstrap";
 import { DsfrHead, getHtmlAttributes } from "@/dsfr-bootstrap/server-only-index";
+import { gistConfigClient } from "@/lib/db/gist/client";
 
+import { orderAndEnrichStartups } from "./_stats/utils";
 import { DefaultFooter } from "./DefaultFooter";
 import { DefaultHeader } from "./DefaultHeader";
 import { QueryProvider } from "./QueryProvider";
@@ -44,7 +46,10 @@ export const metadata: Metadata = {
 
 const lang = "fr";
 
-const RootLayout = ({ children }: PropsWithChildren) => {
+const RootLayout = async ({ children }: PropsWithChildren) => {
+  const { groups, startups } = await gistConfigClient.getConfig();
+  const orderedStartups = await orderAndEnrichStartups(startups);
+
   return (
     <html lang={lang} {...getHtmlAttributes({ lang })} className={cx(styles.app, "snap-y")}>
       <head>
@@ -86,7 +91,7 @@ const RootLayout = ({ children }: PropsWithChildren) => {
                     ]}
                   />
                   <div className={styles.app}>
-                    <DefaultHeader />
+                    <DefaultHeader startups={orderedStartups} />
                     <ClientAnimate as="main" id="content" className={styles.content}>
                       {config.maintenance ? <SystemMessageDisplay code="maintenance" noRedirect /> : children}
                     </ClientAnimate>

@@ -22,6 +22,7 @@ export const metadata: Metadata = {
 };
 
 const Home = async () => {
+  // TODO: use context inside client component instead of fetching again
   const { groups, startups } = await gistConfigClient.getConfig();
 
   const orderedStartups = await orderAndEnrichStartups(startups);

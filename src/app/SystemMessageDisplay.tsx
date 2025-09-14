@@ -9,6 +9,7 @@ import { type ReactNode } from "react";
 
 import { Box, Container, Grid, GridCol } from "@/dsfr";
 import artworkInProgressSvgUrl from "@/dsfr/artwork/pictograms/digital/in-progress.svg";
+import { DsfrPage } from "@/dsfr/layout/DsfrPage";
 
 type SimpleSrcImage = { src: string };
 export const normalizeArtwork = (pictogram: SimpleSrcImage | string): SimpleSrcImage => {
@@ -155,57 +156,62 @@ export const SystemMessageDisplay = ({
   if (typeof pictogram === "string") pictogram = artworkMap[pictogram];
 
   return (
-    <Container>
-      <Grid haveGutters valign="middle" align="center" my="7w" mtmd="12w" mbmd="10w">
-        <GridCol md={6} py="0">
-          <h1>{title}</h1>
-          {!isNaN(+code) && (
-            <Box as="p" className="fr-text--sm" mb="3w">
-              Erreur {code}
+    <DsfrPage>
+      <Container>
+        <Grid haveGutters valign="middle" align="center" my="7w" mtmd="12w" mbmd="10w">
+          <GridCol md={6} py="0">
+            <h1>{title}</h1>
+            {!isNaN(+code) && (
+              <Box as="p" className="fr-text--sm" mb="3w">
+                Erreur {code}
+              </Box>
+            )}
+            <Box as="p" className="fr-text--lead" mb="3w">
+              {headline}
             </Box>
-          )}
-          <Box as="p" className="fr-text--lead" mb="3w">
-            {headline}
-          </Box>
-          <Box className="fr-text--sm" mb="5w">
-            {body}
-          </Box>
-          {!noRedirect && (
-            <ButtonsGroup
-              inlineLayoutWhen="md and up"
-              buttons={[
-                {
-                  children: redirectText,
-                  linkProps: {
-                    href: redirectLink,
+            <Box className="fr-text--sm" mb="5w">
+              {body}
+            </Box>
+            {!noRedirect && (
+              <ButtonsGroup
+                inlineLayoutWhen="md and up"
+                buttons={[
+                  {
+                    children: redirectText,
+                    linkProps: {
+                      href: redirectLink,
+                    },
                   },
-                },
-              ]}
-            />
-          )}
-        </GridCol>
-        <GridCol md={3} offsetMd={1} px="6w" pxmd="0" py="0">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="fr-responsive-img fr-artwork"
-            aria-hidden="true"
-            width="160"
-            height="200"
-            viewBox="0 0 160 200"
-          >
-            <use className="fr-artwork-motif" href={`${normalizeArtwork(artworkOvoidSvgUrl).src}#artwork-motif`}></use>
-            <use
-              className="fr-artwork-background"
-              href={`${normalizeArtwork(artworkOvoidSvgUrl).src}#artwork-background`}
-            ></use>
-            <g transform="translate(40, 60)">
-              <use className="fr-artwork-decorative" href={`${pictogram.src}#artwork-decorative`}></use>
-              <use className="fr-artwork-minor" href={`${pictogram.src}#artwork-minor`}></use>
-              <use className="fr-artwork-major" href={`${pictogram.src}#artwork-major`}></use>
-            </g>
-          </svg>
-        </GridCol>
-      </Grid>
-    </Container>
+                ]}
+              />
+            )}
+          </GridCol>
+          <GridCol md={3} offsetMd={1} px="6w" pxmd="0" py="0">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="fr-responsive-img fr-artwork"
+              aria-hidden="true"
+              width="160"
+              height="200"
+              viewBox="0 0 160 200"
+            >
+              <use
+                className="fr-artwork-motif"
+                href={`${normalizeArtwork(artworkOvoidSvgUrl).src}#artwork-motif`}
+              ></use>
+              <use
+                className="fr-artwork-background"
+                href={`${normalizeArtwork(artworkOvoidSvgUrl).src}#artwork-background`}
+              ></use>
+              <g transform="translate(40, 60)">
+                <use className="fr-artwork-decorative" href={`${pictogram.src}#artwork-decorative`}></use>
+                <use className="fr-artwork-minor" href={`${pictogram.src}#artwork-minor`}></use>
+                <use className="fr-artwork-major" href={`${pictogram.src}#artwork-major`}></use>
+              </g>
+            </svg>
+          </GridCol>
+        </Grid>
+      </Container>
+    </DsfrPage>
   );
 };
