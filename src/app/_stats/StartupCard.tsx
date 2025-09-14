@@ -12,11 +12,10 @@ import { ClientOnly, useHasMounted } from "@/components/utils/ClientOnly";
 import { Loader } from "@/components/utils/Loader";
 import { Icon } from "@/dsfr";
 import { Text } from "@/dsfr/base/Typography";
-import { type StartupConfig } from "@/startup-types";
 
 import { fetchStats } from "./action";
 import styles from "./StartupCard.module.scss";
-import { type StatInput } from "./types";
+import { type EnrichedStartup, type StatInput } from "./types";
 
 const MuiBarLineChart = dynamic(() => import("@/components/charts/MuiBarLineChart").then(m => m.MuiBarLineChart), {
   ssr: false,
@@ -51,7 +50,7 @@ const dateFormatter = (date: Date, periodicity: keyof typeof FORMATERS = DEFAULT
 
 type StartupCardProps = {
   input: StatInput;
-  startup: StartupConfig;
+  startup: EnrichedStartup;
 };
 
 export function StartupCard({ startup, input }: StartupCardProps) {

@@ -9,11 +9,10 @@ import z from "zod";
 
 import { Grid, GridCol } from "@/dsfr";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
-import { type StartupConfig } from "@/startup-types";
 
 import styles from "./GlobalForm.module.scss";
 import { StartupCard } from "./StartupCard";
-import { type StatInput, statInputSchema, type StatPeriodicity } from "./types";
+import { type EnrichedStartup, type StatInput, statInputSchema, type StatPeriodicity } from "./types";
 
 z.config(z.locales.fr());
 const formSchema = statInputSchema;
@@ -54,7 +53,7 @@ const SINCE_OPTIONS: Record<FormType["periodicity"], Array<{ label: string; valu
 // ------------------ Forme globale ------------------
 
 interface GlobalFormProps {
-  startups: StartupConfig[];
+  startups: EnrichedStartup[];
 }
 
 export const GlobalForm = ({ startups }: GlobalFormProps) => {

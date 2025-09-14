@@ -2,13 +2,25 @@
 
 import z from "zod";
 
-import { STARTUPS } from "@/config";
+import { gistConfigClient } from "@/lib/db/gist/client";
+import { fetchBetaStartup } from "@/lib/fetchBetaStartup";
+import { type StartupConfig } from "@/startup-types";
 import { type ServerActionResponse } from "@/utils/next";
 
-import { type EnrichedStats, type StatInput, statInputSchema, type StatOuput } from "./types";
+import { type EnrichedStartup, type EnrichedStats, type StatInput, statInputSchema, type StatOuput } from "./types";
+
+async function enrichStartup(startup: StartupConfig): Promise<EnrichedStartup> {
+  const bs = await fetchBetaStartup(startup.id);
+  return {
+    ...startup,
+    name: bs.name,
+    website: bs.stats_url ?? undefined,
+  };
+}
 
 export const fetchStats = async (startupId: string, input: StatInput): Promise<ServerActionResponse<EnrichedStats>> => {
-  if (!STARTUPS.some(s => s.id === startupId)) {
+  const { startups } = await gistConfigClient.getConfig();
+  if (!startups.some(s => s.id === startupId)) {
     return {
       ok: false,
       error: `La startup ${startupId} n'existe pas.`,
@@ -24,7 +36,7 @@ export const fetchStats = async (startupId: string, input: StatInput): Promise<S
   }
 
   const { periodicity, since = 0 } = parsed.data;
-  const startup = STARTUPS.find(s => s.id === startupId)!;
+  const startup = await enrichStartup(startups.find(s => s.id === startupId)!);
 
   if (!startup.statsUrl) {
     console.warn(`La startup ${startupId} n'a pas d'URL de stats définie.`);
@@ -80,8 +92,6 @@ export const fetchStats = async (startupId: string, input: StatInput): Promise<S
       variation,
     };
   });
-
-  // console.debug(`Stats for ${startup.name} (${periodicity}, since: ${since}):`, stats);
 
   return {
     ok: true,

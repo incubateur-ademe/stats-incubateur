@@ -1,5 +1,7 @@
 import z from "zod";
 
+import { type StartupConfig } from "@/startup-types";
+
 export interface Stat {
   date: Date;
   /**
@@ -21,6 +23,11 @@ export interface EnrichedStats {
       variation: number;
     }
   >;
+}
+
+export interface EnrichedStartup extends StartupConfig {
+  name: string;
+  website?: string;
 }
 
 const STAT_DAY_MAX = 180;

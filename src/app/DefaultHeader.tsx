@@ -3,12 +3,18 @@ import Header from "@codegouvfr/react-dsfr/Header";
 
 import { Brand } from "@/components/Brand";
 import { config } from "@/config";
+import { gistConfigClient } from "@/lib/db/gist/client";
 
+import { orderAndEnrichStartups } from "./_stats/utils";
 import { Navigation } from "./Navigation";
 
-export const DefaultHeader = () => (
+export const DefaultHeader = async () => (
   <Header
-    navigation={config.maintenance ? null : <Navigation />}
+    navigation={
+      config.maintenance ? null : (
+        <Navigation startups={await orderAndEnrichStartups((await gistConfigClient.getConfig()).startups)} />
+      )
+    }
     brandTop={<Brand />}
     homeLinkProps={{
       href: "/",

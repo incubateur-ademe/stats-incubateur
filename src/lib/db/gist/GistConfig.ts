@@ -1,12 +1,21 @@
 import type OctokitTypes from "@octokit/openapi-types";
 import { type Octokit } from "octokit";
 
+import { type StartupConfig, type StartupGroupConfig } from "@/startup-types";
+
 export type GistConfigClientOptions = {
-  /** Nom du fichier dans le gist (ex: "config.json") */
+  /** Nom du fichier dans le gist */
   filename: string;
-  /** ID du Gist (ex: "aa5a315d61ae9438b18d") */
+  /** ID du Gist */
   gistId: string;
 };
+
+export interface GistConfig {
+  groups: StartupGroupConfig[];
+  startups: StartupConfig[];
+  updatedAt?: string; // ISO date
+  version: string; // SHA du commit
+}
 
 export class GistConfigClient {
   #octokit: Octokit;
@@ -24,8 +33,11 @@ export class GistConfigClient {
    * NB: L’API "update a gist" ne supporte pas de message de commit personnalisé,
    * on peut toutefois mettre à jour la "description" du Gist si besoin.
    */
-  public async updateConfig(config: unknown, description?: string): Promise<void> {
-    const content = typeof config === "string" ? config : JSON.stringify(config);
+  public async updateConfig(config: GistConfig, description?: string): Promise<void> {
+    const copy = { ...config } as Partial<GistConfig>;
+    delete copy.updatedAt;
+    delete copy.version;
+    const content = JSON.stringify(copy, null, 2);
     await this.#octokit.rest.gists.update({
       gist_id: this.#gistId,
       description,
@@ -49,24 +61,24 @@ export class GistConfigClient {
   }
 
   /** Lit la config à une révision donnée (SHA). */
-  public async readRevision<T = unknown>(sha: string): Promise<T | string> {
+  public async readRevision(sha: string): Promise<GistConfig> {
     const { data } = await this.#octokit.rest.gists.getRevision({
       gist_id: this.#gistId,
       sha,
     });
-    return this.#readFileFromGist<T>(data);
+    return { ...(await this.#readFileFromGist(data)), updatedAt: data.updated_at, version: sha };
   }
 
   /** Récupère la config actuelle (HEAD). */
-  public async getConfig<T = unknown>(): Promise<T | string> {
+  public async getConfig(): Promise<GistConfig> {
     const { data } = await this.#octokit.rest.gists.get({ gist_id: this.#gistId });
-    return this.#readFileFromGist<T>(data);
+    return { ...(await this.#readFileFromGist(data)), updatedAt: data.updated_at, version: "HEAD" };
   }
 
   // -- Helpers --
 
   /** Extrait et retourne le contenu du fichier ciblé; gère le cas "truncated". */
-  async #readFileFromGist<T>(gist: OctokitTypes.components["schemas"]["gist-simple"]): Promise<T> {
+  async #readFileFromGist(gist: OctokitTypes.components["schemas"]["gist-simple"]): Promise<GistConfig> {
     const file = gist.files?.[this.#filename];
     if (!file) {
       throw new Error(`Fichier '${this.#filename}' introuvable dans le gist ${this.#gistId}`);
@@ -86,6 +98,6 @@ export class GistConfigClient {
       throw new Error("Impossible de lire le contenu (ni content, ni raw_url).");
     }
 
-    return JSON.parse(text) as T;
+    return JSON.parse(text) as GistConfig;
   }
 }
