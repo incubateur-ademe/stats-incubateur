@@ -1,11 +1,9 @@
 import { ReasonPhrases, StatusCodes } from "http-status-codes";
 import { type NextRequest, NextResponse } from "next/server";
 
-import { deleteAuthCookie, getAuthCookie, isAuthCookieExpired, setAuthCookie } from "../cookies";
+import { config } from "@/config";
 
-const ADMIN_USERNAME = "";
-// const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
-const ADMIN_PASSWORD = "";
+import { deleteAuthCookie, getAuthCookie, isAuthCookieExpired, setAuthCookie } from "../cookies";
 
 export const GET = (request: NextRequest) => {
   const { searchParams, origin } = new URL(request.url);
@@ -23,7 +21,7 @@ export const GET = (request: NextRequest) => {
       if (scheme === "Basic") {
         const decoded = Buffer.from(encoded, "base64").toString();
         const [username, password] = decoded.split(":");
-        if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+        if (username === config.admin.login && password === config.admin.password) {
           const response = NextResponse.redirect(returnTo);
           setAuthCookie(response.cookies);
           return response;

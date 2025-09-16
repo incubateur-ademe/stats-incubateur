@@ -19,5 +19,5 @@ export const orderAndEnrichStartups = async (startups: StartupConfig[]): Promise
     // Sort to have the ones with statsUrl at the beginning
     if (a.statsUrl && !b.statsUrl) return -1;
     if (!a.statsUrl && b.statsUrl) return 1;
-    return a.name.localeCompare(b.name);
+    return (a.nameOverride ?? a.name).localeCompare(b.nameOverride ?? b.name);
   });

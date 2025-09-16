@@ -1,7 +1,7 @@
 import type OctokitTypes from "@octokit/openapi-types";
 import { type Octokit } from "octokit";
 
-import { type StartupConfig, type StartupGroupConfig } from "@/startup-types";
+import { type FullConfig } from "@/startup-types";
 
 export type GistConfigClientOptions = {
   /** Nom du fichier dans le gist */
@@ -10,9 +10,7 @@ export type GistConfigClientOptions = {
   gistId: string;
 };
 
-export interface GistConfig {
-  groups: StartupGroupConfig[];
-  startups: StartupConfig[];
+export interface GistConfig extends FullConfig {
   updatedAt?: string; // ISO date
   version: string; // SHA du commit
 }
@@ -33,7 +31,7 @@ export class GistConfigClient {
    * NB: L’API "update a gist" ne supporte pas de message de commit personnalisé,
    * on peut toutefois mettre à jour la "description" du Gist si besoin.
    */
-  public async updateConfig(config: GistConfig, description?: string): Promise<void> {
+  public async updateConfig(config: FullConfig, description?: string): Promise<void> {
     const copy = { ...config } as Partial<GistConfig>;
     delete copy.updatedAt;
     delete copy.version;

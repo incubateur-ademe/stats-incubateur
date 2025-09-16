@@ -40,4 +40,8 @@ export const config = {
     filename: ensureApiEnvVar(process.env.GIST_CONFIG_FILENAME, "stats-incubateur-ademe.config.json"),
   },
   betaGouvUrl: ensureApiEnvVar(process.env.BETA_GOUV_URL, "https://beta.gouv.fr"),
+  admin: {
+    login: ensureApiEnvVar(process.env.ADMIN_LOGIN, ""),
+    password: ensureApiEnvVar(process.env.ADMIN_PASSWORD, ""),
+  },
 } as const;

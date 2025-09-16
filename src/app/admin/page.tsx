@@ -1,15 +1,20 @@
+import { Container } from "@/dsfr";
 import { DsfrPage } from "@/dsfr/layout/DsfrPage";
+import { gistConfigClient } from "@/lib/db/gist/client";
 
-const AdminPage = () => {
-  // const gistConfig = await gistConfigClient.getConfig();
-  // const history = await gistConfigClient.getHistory();
-  // for (const rev of history) {
-  //   if (!rev.version) continue;
-  //   const revConfig = await gistConfigClient.readRevision(rev.version);
-  //   console.log(`--- REV ${rev.version} @ ${rev.committed_at} ---`, revConfig);
-  // }
+import { AdminConfigForm } from "./AdminConfigForm";
 
-  return <DsfrPage>Admin Page</DsfrPage>;
+const AdminPage = async () => {
+  const gistConfig = await gistConfigClient.getConfig();
+
+  return (
+    <DsfrPage>
+      <Container fluid py="4w" px="2w">
+        <h1>Configuration – Admin</h1>
+        <AdminConfigForm initialConfig={gistConfig} />
+      </Container>
+    </DsfrPage>
+  );
 };
 
 export default AdminPage;

@@ -1,0 +1,75 @@
+.root {
+    /* hauteur totale : viewport - offset footer éventuel */
+    block-size: calc(100dvh - 4em);
+    display: grid;
+    grid-template-rows: auto 1fr;
+    /* actions/alert + colonnes */
+    gap: 1rem;
+    /* ajuste avec tes tokens DSFR si tu veux */
+}
+
+/* barre d’actions + alert */
+.actions {
+    position: sticky;
+    /* reste visible si la page scrolle */
+    top: 0;
+    z-index: 2;
+    padding-block: .5rem;
+}
+
+/* conteneur des deux colonnes */
+.columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    min-height: 0;
+    /* 🔑 autorise le shrink pour que l’overflow marche */
+}
+
+/* chaque colonne (boîte) */
+.col {
+    min-height: 0;
+    /* 🔑 */
+    overflow: hidden;
+    /* on scrolle à l’intérieur de .scroll */
+    border: 1px solid var(--border-default-grey, #ddd);
+    border-radius: .5rem;
+    // background: var(--background-alt-grey, #fafafa);
+    display: flex;
+    flex-direction: column;
+}
+
+/* header de colonne (titre + bouton “Ajouter”) */
+.colHeader {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: inherit;
+    border-bottom: 1px solid var(--border-default-grey, #ddd);
+    padding: .75rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* zone qui scrolle indépendamment */
+.scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    /* 🔑 sans ça, pas de scroll interne */
+    overflow: auto;
+    // overscroll-behavior: contain;
+    padding: 1rem;
+    scrollbar-gutter: stable both-edges;
+    /* évite les sauts de layout */
+}
+
+/* “cartes” internes (tes blocs bleus/gris) */
+.card {
+    margin-block-end: 1rem;
+    padding: 1rem;
+    border-radius: .5rem;
+    background: var(--background-alt-grey);
+    /* ou tes variantes DSFR */
+    box-shadow: 0 1px 0 rgba(0, 0, 0, .04);
+}

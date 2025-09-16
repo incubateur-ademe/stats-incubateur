@@ -158,6 +158,14 @@ const config = [
             },
           ],
           "no-restricted-imports": "off",
+          "@typescript-eslint/no-misused-promises": [
+            "error",
+            {
+              checksVoidReturn: {
+                attributes: false,
+              },
+            },
+          ],
           "@typescript-eslint/no-restricted-imports": [
             "error",
             {
