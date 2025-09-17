@@ -5,9 +5,20 @@ import { config } from "@/config";
 
 import { deleteAuthCookie, getAuthCookie, isAuthCookieExpired, setAuthCookie } from "../cookies";
 
+function getUnauthorizedResponse() {
+  return new NextResponse(ReasonPhrases.UNAUTHORIZED, {
+    status: StatusCodes.UNAUTHORIZED,
+    headers: { "WWW-Authenticate": `Basic realm="Admin Page", charset="UTF-8"` },
+  });
+}
+
 export const GET = (request: NextRequest) => {
   const { searchParams, origin } = new URL(request.url);
-  const returnTo = new URL(searchParams.get("returnTo") || "/admin", origin);
+  if (!origin.startsWith(config.host)) {
+    return new NextResponse(ReasonPhrases.FORBIDDEN, { status: StatusCodes.FORBIDDEN });
+  }
+
+  const returnTo = new URL(searchParams.get("returnTo") || "/admin", config.host);
 
   // handle cookies based auth
   const authCookie = getAuthCookie(request.cookies);
@@ -30,10 +41,8 @@ export const GET = (request: NextRequest) => {
     }
   }
 
-  const response = new NextResponse(ReasonPhrases.UNAUTHORIZED, {
-    status: StatusCodes.UNAUTHORIZED,
-    headers: { "WWW-Authenticate": `Basic realm="Admin Page", charset="UTF-8"` },
-  });
+  // else if expired or no auth header
+  const response = getUnauthorizedResponse();
   deleteAuthCookie(response.cookies);
   return response;
 };
