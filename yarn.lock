@@ -1508,6 +1508,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@netlify/plugin-nextjs@npm:^5.15.1":
+  version: 5.15.1
+  resolution: "@netlify/plugin-nextjs@npm:5.15.1"
+  checksum: 10c0/4b02d5d79d3697ff8c2fd64c65f774ed84e51c8d2dceb8aeab1b99a845a99fc9f62561d60bb7b9b5ef173e8b540f19709a8770b6f9b7c59e2847408a11817947
+  languageName: node
+  linkType: hard
+
 "@next/env@npm:16.0.6":
   version: 16.0.6
   resolution: "@next/env@npm:16.0.6"
@@ -7740,6 +7747,7 @@ __metadata:
     "@mui/material-nextjs": "npm:^7.3.6"
     "@mui/system": "npm:^7.3.6"
     "@mui/x-charts": "npm:^8.20.0"
+    "@netlify/plugin-nextjs": "npm:^5.15.1"
     "@next/eslint-plugin-next": "npm:^16.0.6"
     "@tailwindcss/postcss": "npm:^4.1.17"
     "@tanstack/react-query": "npm:^5.90.11"
