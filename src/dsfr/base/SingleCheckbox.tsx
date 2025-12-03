@@ -10,7 +10,7 @@ export interface SingleCheckboxProps {
   small?: boolean;
 }
 
-export const SingleCheckbox = ({ label, small = false, nativeInputProps }: SingleCheckboxProps) => {
+export const SingleCheckbox = ({ label, nativeInputProps, small = false }: SingleCheckboxProps) => {
   const id = useAnalyticsId({
     defaultIdPrefix: `fr-single-checkbox-${nativeInputProps.name === undefined ? "" : `-${nativeInputProps.name}`}`,
     explicitlyProvidedId: nativeInputProps.id,

@@ -45,13 +45,13 @@ export const CollapsedSectionDynamicGroup = ({ className, data }: CollapsedSecti
           buttons={[
             {
               children: isOpenAll ? "Tout replier" : "Tout déplier",
-              priority: "secondary",
-              onClick: handleOpenAll,
               nativeButtonProps: {
-                role: "status",
-                "aria-live": "polite",
                 "aria-atomic": "true",
+                "aria-live": "polite",
+                role: "status",
               },
+              onClick: handleOpenAll,
+              priority: "secondary",
             },
           ]}
         />
@@ -81,7 +81,7 @@ type CollapsedSectionProps = PropsWithChildren<{
   title: string;
 }>;
 
-const CollapsedSection = ({ children, title, id, isOpen, openSection }: CollapsedSectionProps) => {
+const CollapsedSection = ({ children, id, isOpen, openSection, title }: CollapsedSectionProps) => {
   return (
     <li className={styles.section} id={id}>
       <div className={styles.head}>

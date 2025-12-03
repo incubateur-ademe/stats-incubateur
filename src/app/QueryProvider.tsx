@@ -10,11 +10,11 @@ export function QueryProvider({ children }: PropsWithChildren) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            // bons defaults pour éviter le refetch et garder l'UX fluide
-            staleTime: 60_000,
             gcTime: 5 * 60_000,
             refetchOnWindowFocus: false,
             retry: 1,
+            // bons defaults pour éviter le refetch et garder l'UX fluide
+            staleTime: 60_000,
           },
         },
       }),

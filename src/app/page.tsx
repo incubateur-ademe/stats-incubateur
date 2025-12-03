@@ -12,18 +12,18 @@ const url = "/";
 
 export const metadata: Metadata = {
   ...sharedMetadata,
+  alternates: {
+    canonical: url,
+  },
   openGraph: {
     ...sharedMetadata.openGraph,
     url,
-  },
-  alternates: {
-    canonical: url,
   },
 };
 
 const Home = async () => {
   // TODO: use context inside client component instead of fetching again
-  const { groups, startups } = await gistConfigClient.getConfig();
+  const { groups: _groups, startups } = await gistConfigClient.getConfig();
 
   const orderedStartups = await orderAndEnrichStartups(startups);
 

@@ -1,4 +1,5 @@
 "use client";
+"use no memo";
 
 import ButtonsGroup from "@codegouvfr/react-dsfr/ButtonsGroup";
 import Checkbox from "@codegouvfr/react-dsfr/Checkbox";
@@ -18,18 +19,18 @@ import { type FullConfig, FullConfigSchema } from "@/startup-types";
 import { saveConfig } from "./action";
 import styles from "./AdminConfigForm.module.scss";
 
-type Props = {
+interface Props {
   initialConfig: FullConfig;
-};
+}
 
-type GroupTagsEditorProps = {
+interface GroupTagsEditorProps {
   label?: string;
   onChange: (ids: string[]) => void;
   options: Array<{ id: string; label: string }>;
   value: string[];
-};
+}
 
-function GroupTagsEditor({ value, onChange, options, label = "Ajouter un groupe" }: GroupTagsEditorProps) {
+function GroupTagsEditor({ label = "Ajouter un groupe", onChange, options, value }: GroupTagsEditorProps) {
   const [query, setQuery] = useState("");
   const byId = useMemo(() => new Map(options.map(o => [o.id, o.label])), [options]);
 
@@ -101,7 +102,6 @@ function GroupTagsEditor({ value, onChange, options, label = "Ajouter un groupe"
               className={cx(params.inputProps.className)}
               nativeInputProps={{
                 ...params.inputProps,
-                placeholder: params.inputProps.placeholder ?? "Rechercher un groupe…",
                 onKeyDown: e => {
                   if (e.key === "Enter") {
                     e.preventDefault();
@@ -109,6 +109,7 @@ function GroupTagsEditor({ value, onChange, options, label = "Ajouter un groupe"
                     if (first) addOne(first.id);
                   }
                 },
+                placeholder: params.inputProps.placeholder ?? "Rechercher un groupe…",
               }}
             />
           </div>
@@ -120,24 +121,25 @@ function GroupTagsEditor({ value, onChange, options, label = "Ajouter un groupe"
 
 export const AdminConfigForm = ({ initialConfig }: Props) => {
   const methods = useForm<FullConfig>({
-    resolver: standardSchemaResolver(FullConfigSchema),
-    mode: "onChange",
     defaultValues: initialConfig,
+    mode: "onChange",
+    resolver: standardSchemaResolver(FullConfigSchema),
   });
 
   const {
-    register,
     control,
-    handleSubmit,
-    setValue,
-    getValues,
-    reset,
-    watch,
     formState: { errors, isDirty, isValid },
+    getValues,
+    handleSubmit,
+    register,
+    reset,
+    setValue,
+    watch,
   } = methods;
 
   const groupsFA = useFieldArray({ control, name: "groups" });
   const startupsFA = useFieldArray({ control, name: "startups" });
+  // eslint-disable-next-line react-hooks/incompatible-library -- no memo directive used
   const watchedGroups = watch("groups");
 
   const [status, setStatus] = useState<{ text: string; type: "err" | "ok" } | null>(null);
@@ -146,10 +148,10 @@ export const AdminConfigForm = ({ initialConfig }: Props) => {
     setStatus(null);
     const res = await saveConfig(data);
     if (res.ok) {
-      setStatus({ type: "ok", text: "Configuration sauvegardée ✅" });
+      setStatus({ text: "Configuration sauvegardée ✅", type: "ok" });
       startTransition(() => reset(data)); // reset du dirty state
     } else {
-      setStatus({ type: "err", text: res.error || "Échec de la sauvegarde" });
+      setStatus({ text: res.error || "Échec de la sauvegarde", type: "err" });
     }
   });
 
@@ -197,8 +199,8 @@ export const AdminConfigForm = ({ initialConfig }: Props) => {
             alignment="right"
             inlineLayoutWhen="always"
             buttons={[
-              { children: "Réinitialiser", priority: "secondary", onClick: () => reset(initialConfig) },
-              { children: "Enregistrer", priority: "primary", type: "submit", disabled: !isDirty || !isValid },
+              { children: "Réinitialiser", onClick: () => reset(initialConfig), priority: "secondary" },
+              { children: "Enregistrer", disabled: !isDirty || !isValid, priority: "primary", type: "submit" },
             ]}
           />
           {status && (
@@ -219,7 +221,7 @@ export const AdminConfigForm = ({ initialConfig }: Props) => {
                 buttons={[
                   {
                     children: "Ajouter un groupe",
-                    onClick: () => groupsFA.append({ id: "", name: "", enabled: true, description: "" }),
+                    onClick: () => groupsFA.append({ description: "", enabled: true, id: "", name: "" }),
                     priority: "secondary",
                   },
                 ]}
@@ -295,7 +297,7 @@ export const AdminConfigForm = ({ initialConfig }: Props) => {
                 buttons={[
                   {
                     children: "Ajouter une startup",
-                    onClick: () => startupsFA.append({ id: "", groups: [], enabled: true }),
+                    onClick: () => startupsFA.append({ enabled: true, groups: [], id: "" }),
                     priority: "secondary",
                   },
                 ]}
@@ -342,8 +344,8 @@ export const AdminConfigForm = ({ initialConfig }: Props) => {
                           ...register(`startups.${si}.statsUrl`, {
                             setValueAs: (v: string) => v?.trim() || undefined,
                           }),
-                          type: "url",
                           placeholder: "https://…",
+                          type: "url",
                         }}
                         state={errors?.startups?.[si]?.statsUrl ? "error" : "default"}
                         stateRelatedMessage={errors?.startups?.[si]?.statsUrl?.message}
@@ -356,8 +358,8 @@ export const AdminConfigForm = ({ initialConfig }: Props) => {
                           ...register(`startups.${si}.websiteOverride`, {
                             setValueAs: (v: string) => v?.trim() || undefined,
                           }),
-                          type: "url",
                           placeholder: "https://…",
+                          type: "url",
                         }}
                         state={errors?.startups?.[si]?.websiteOverride ? "error" : "default"}
                         stateRelatedMessage={errors?.startups?.[si]?.websiteOverride?.message}
@@ -378,7 +380,7 @@ export const AdminConfigForm = ({ initialConfig }: Props) => {
                         control={control}
                         name={`startups.${si}.groups`}
                         render={({ field }) => (
-                          <GroupTagsEditor value={field.value || []} onChange={field.onChange} options={groupOptions} />
+                          <GroupTagsEditor value={field.value ?? []} onChange={field.onChange} options={groupOptions} />
                         )}
                       />
                       {errors?.startups?.[si]?.groups && (

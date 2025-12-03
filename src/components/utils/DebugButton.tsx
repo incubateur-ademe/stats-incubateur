@@ -2,7 +2,7 @@
 
 import Button from "@codegouvfr/react-dsfr/Button";
 import ToggleSwitch from "@codegouvfr/react-dsfr/ToggleSwitch";
-import { type PropsWithChildren, useEffect, useState } from "react";
+import { type PropsWithChildren, useState } from "react";
 import Skeleton from "react-loading-skeleton";
 
 import { type Any } from "@/utils/types";
@@ -33,12 +33,12 @@ export interface DebugButtonProps {
   infoText?: string;
   obj: Any;
 }
-export const DebugButton = ({ obj, infoText, alwaysOn, children }: PropsWithChildren<DebugButtonProps>) => {
-  const [isDebugEnabled, setIsDebugEnabled] = useState(false);
-
-  useEffect(() => {
-    setIsDebugEnabled(alwaysOn ?? localStorage.getItem(DEBUG_KEY) === DEBUG_KEY);
-  }, [alwaysOn]);
+export const DebugButton = ({ alwaysOn, children, infoText, obj }: PropsWithChildren<DebugButtonProps>) => {
+  const isControlled = alwaysOn !== undefined;
+  const [isDebugEnabledState, _setIsDebugEnabledState] = useState(
+    () => typeof localStorage !== "undefined" && localStorage.getItem(DEBUG_KEY) === DEBUG_KEY,
+  );
+  const isDebugEnabled = isControlled ? !!alwaysOn : isDebugEnabledState;
 
   return (
     <>

@@ -8,7 +8,7 @@ interface DsfrSvgProps {
   width: number;
 }
 
-export const DsfrSvg = ({ height, href, svgId, width, className }: DsfrSvgProps) => (
+export const DsfrSvg = ({ className, height, href, svgId, width }: DsfrSvgProps) => (
   <svg className={cx("dsfr-svg", "fr-fluid-img", className)} width={width} height={height}>
     <use href={`${href}#${svgId}`}></use>
   </svg>

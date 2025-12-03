@@ -4,9 +4,13 @@ import { type SuspenseProps, useEffect, useState } from "react";
 
 export const ClientOnly = ({ children, fallback }: SuspenseProps) => {
   const [hasMounted, setHasMounted] = useState(false);
+
   useEffect(() => {
-    setHasMounted(true);
+    let raf = 0;
+    raf = requestAnimationFrame(() => setHasMounted(true));
+    return () => cancelAnimationFrame(raf);
   }, []);
+
   if (!hasMounted) {
     return <>{fallback}</>;
   }
@@ -15,8 +19,12 @@ export const ClientOnly = ({ children, fallback }: SuspenseProps) => {
 
 export function useHasMounted() {
   const [hasMounted, setHasMounted] = useState(false);
+
   useEffect(() => {
-    setHasMounted(true);
+    let raf = 0;
+    raf = requestAnimationFrame(() => setHasMounted(true));
+    return () => cancelAnimationFrame(raf);
   }, []);
+
   return hasMounted;
 }

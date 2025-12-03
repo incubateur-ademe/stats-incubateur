@@ -4,8 +4,8 @@ const robots = (): MetadataRoute.Robots => {
   // private site, no need to index
   return {
     rules: {
-      userAgent: "*",
       disallow: "/",
+      userAgent: "*",
     },
   };
 };

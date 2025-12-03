@@ -16,18 +16,18 @@ const isDev = process.env.NODE_ENV === "development";
 
 const FRIENDS = ["https://*.gouv.fr", "https://*.ademe.fr", "https://ademe.fr"];
 const csp = {
-  "default-src": ["'none'"],
+  "base-uri": ["'self'", ...FRIENDS],
   "connect-src": ["'self'", ...FRIENDS, isDev && "http://localhost"],
+  "default-src": ["'none'"],
   "font-src": ["'self'"],
-  "media-src": ["'self'"],
+  "form-action": ["'self'", ...FRIENDS],
+  "frame-ancestors": ["'self'"],
+  "frame-src": ["'none'"],
   "img-src": ["'self'", "data:"],
+  "media-src": ["'self'"],
+  "object-src": ["'self'", "data:"],
   "script-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'", ...FRIENDS, isDev && "http://localhost"],
   "style-src": ["'self'", "'unsafe-inline'"],
-  "object-src": ["'self'", "data:"],
-  "frame-ancestors": ["'self'"],
-  "base-uri": ["'self'", ...FRIENDS],
-  "form-action": ["'self'", ...FRIENDS],
-  "frame-src": ["'none'"],
   ...(!isDev && {
     "block-all-mixed-content": [],
     "upgrade-insecure-requests": [],
@@ -39,34 +39,17 @@ const ContentSecurityPolicy = Object.entries(csp)
   .join(" ");
 
 const config: NextConfig = {
-  poweredByHeader: false,
-  // output: "standalone",
-  // webpack: (config: Configuration) => {
-  //   config.module?.rules?.push({
-  //     test: /\.(woff2|webmanifest|ttf)$/,
-  //     type: "asset/resource",
-  //   });
-
-  //   return config;
-  // },
+  env,
   experimental: {
-    serverMinification: true,
     authInterrupts: true,
     optimizePackageImports: ["@/lib/repo", "@/dsfr/client", "@/dsfr"],
-    strictNextHead: true,
+    serverMinification: true,
     taint: true,
+    turbopackFileSystemCacheForDev: true,
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  env,
-  pageExtensions: ["js", "jsx", "ts", "tsx"],
-  turbopack: {},
-
   headers() {
     return Promise.resolve<Header[]>([
       {
-        source: "/(.*)",
         headers: [
           {
             key: "Content-Security-Policy",
@@ -105,9 +88,15 @@ const config: NextConfig = {
             value: "cross-origin",
           },
         ],
+        source: "/(.*)",
       },
     ]);
   },
+  pageExtensions: ["js", "jsx", "ts", "tsx"],
+  poweredByHeader: false,
+  reactCompiler: true,
+
+  turbopack: {},
 };
 
 export default config;

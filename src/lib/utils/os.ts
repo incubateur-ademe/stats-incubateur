@@ -19,18 +19,18 @@ type DefaultEnsureNextEnvVar = <T extends primitive | primitive[]>(
  */
 type RemoveUselessLiterals<T> = T extends "" ? string : T extends boolean ? boolean : T extends number ? number : T;
 
-type EnsureNextEnvVar = {
+interface EnsureNextEnvVar {
   (envVar: string | undefined): asserts envVar is string;
   <T>(envVar: string | undefined, defaultValue: T): RemoveUselessLiterals<T>;
   <T>(envVar: string | undefined, transformer: (envVar: string) => T): RemoveUselessLiterals<T>;
   <T>(envVar: string | undefined, transformer: (envVar: string) => T, defaultValue: T): RemoveUselessLiterals<T>;
-};
+}
 type primitive = boolean | number | string;
 
 const ensureNextEnvVar_: DefaultEnsureNextEnvVar = (envVar, transformerOrDefaultValue, defaultValue) => {
   const defaultValueToTest = typeof transformerOrDefaultValue !== "function" ? transformerOrDefaultValue : defaultValue;
   if (typeof envVar === "undefined" && typeof defaultValueToTest === "undefined") {
-    throw new Error(`Some env var are not found.`, { cause: { envVar, transformerOrDefaultValue, defaultValue } });
+    throw new Error(`Some env var are not found.`, { cause: { defaultValue, envVar, transformerOrDefaultValue } });
   }
 
   if (typeof envVar === "undefined" && typeof defaultValue !== "undefined") return defaultValue;

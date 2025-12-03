@@ -18,14 +18,14 @@ import {
 import { useId } from "react";
 
 const BAR_SERIE: BarSeriesType = {
-  type: "bar",
   color: fr.colors.options.blueFrance.sun113_625.default,
   highlightScope: { fade: "series", highlight: "item" },
+  type: "bar",
 };
 const LINE_SERIE: LineSeriesType = {
-  type: "line",
   color: fr.colors.options.redMarianne._425_625.default,
   highlightScope: { fade: "series", highlight: "item" },
+  type: "line",
 };
 
 export interface MuiBarLineChartProps {
@@ -52,42 +52,42 @@ export interface MuiBarLineChartProps {
 }
 
 export const MuiBarLineChart = ({
-  height = 400,
-  nameBar,
-  nameLine,
+  barAxisWidth = 60,
   barData,
-  lineData,
-  x,
-  xName = "Date",
   barId,
-  lineId,
   barValueFormatter = value => {
     const intValue = parseInt(value as string);
     return isNaN(intValue)
       ? (value as string)
       : new Intl.NumberFormat("fr-FR", {
-          notation: "compact",
           compactDisplay: "short",
+          notation: "compact",
         }).format(intValue);
   },
-  lineValueFormatter,
-  xValueFormatter,
-  xHeight = 40,
-  barAxisWidth = 60,
+  height = 400,
   lineAxisWidth = 50,
+  lineData,
+  lineId,
+  lineValueFormatter,
+  nameBar,
+  nameLine,
+  x,
+  xHeight = 40,
+  xName = "Date",
   xTickInterval = 1,
+  xValueFormatter,
 }: MuiBarLineChartProps) => {
   const autoId = useId();
   const barSerie: BarSeriesType = {
     ...BAR_SERIE,
-    label: nameBar,
     data: barData,
+    label: nameBar,
     yAxisId: `${barId}-${autoId}`,
   };
   const lineSerie: LineSeriesType = {
     ...LINE_SERIE,
-    label: nameLine,
     data: lineData,
+    label: nameLine,
     yAxisId: `${lineId}-${autoId}`,
   };
 
@@ -101,25 +101,25 @@ export const MuiBarLineChart = ({
       height={height}
       xAxis={[
         {
-          id: xId,
           data: x,
-          scaleType: "band",
           height: xHeight,
+          id: xId,
+          scaleType: "band",
           valueFormatter: xValueFormatter,
         },
       ]}
       yAxis={[
         {
           id: barSerie.yAxisId,
-          scaleType: "linear",
           position: "left",
-          width: barAxisWidth,
+          scaleType: "linear",
           valueFormatter: barValueFormatter,
+          width: barAxisWidth,
         },
         {
           id: lineSerie.yAxisId,
-          scaleType: "linear",
           position: "right",
+          scaleType: "linear",
           // valueFormatter: value => `${value}%`,
           valueFormatter: lineValueFormatter,
           width: lineAxisWidth,

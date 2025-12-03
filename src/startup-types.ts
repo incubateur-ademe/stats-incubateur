@@ -91,9 +91,9 @@ export const FullConfigSchema = z
       if (dupGroups.has(id)) {
         ctx.issues.push({
           code: "custom",
+          input,
           message: `ID de groupe dupliqué: "${id}"`,
           path: ["groups", i, "id"],
-          input,
         });
       }
     });
@@ -101,9 +101,9 @@ export const FullConfigSchema = z
       if (dupStartups.has(id)) {
         ctx.issues.push({
           code: "custom",
+          input,
           message: `ID de startup dupliqué: "${id}"`,
           path: ["startups", i, "id"],
-          input,
         });
       }
     });
@@ -115,9 +115,9 @@ export const FullConfigSchema = z
         if (!known.has(gid)) {
           ctx.issues.push({
             code: "custom",
+            input,
             message: `Groupe "${gid}" introuvable`,
             path: ["startups", si, "groups", gi],
-            input,
           });
         }
       });

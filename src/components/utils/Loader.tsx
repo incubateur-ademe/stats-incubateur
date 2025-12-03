@@ -12,9 +12,9 @@ export interface LoaderProps {
 }
 
 export const Loader = ({
-  loading,
-  text = null,
-  size = "1em",
-  color = fr.colors.decisions.text.active.blueFrance.default,
   className,
+  color = fr.colors.decisions.text.active.blueFrance.default,
+  loading,
+  size = "1em",
+  text = null,
 }: LoaderProps) => (loading ? <PulseLoader className={cx(className)} size={size} color={color} /> : text);

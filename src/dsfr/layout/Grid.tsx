@@ -19,7 +19,7 @@ export type GridProps = PropsWithChildren<
 >;
 
 export const Grid = forwardRef<HTMLDivElement, GridProps>(
-  ({ children, haveGutters, align, valign, className, ...rest }, ref) => (
+  ({ align, children, className, haveGutters, valign, ...rest }, ref) => (
     <BoxRef
       className={cx(
         fr.cx(
@@ -65,22 +65,22 @@ export type GridColProps = MarginPropsVertical &
 
 export const GridCol = ({
   base = 12,
-  sm,
-  md,
+  children,
+  className,
   lg,
-  xl,
+  md,
   offset,
   offsetLg,
   offsetMd,
-  offsetSm,
-  offsetXl,
   offsetRight,
   offsetRightLg,
   offsetRightMd,
   offsetRightSm,
   offsetRightXl,
-  className,
-  children,
+  offsetSm,
+  offsetXl,
+  sm,
+  xl,
   ...rest
 }: GridColProps) => (
   <Box

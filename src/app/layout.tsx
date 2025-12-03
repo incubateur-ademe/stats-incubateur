@@ -1,6 +1,5 @@
 import "./globals.scss";
 import "react-loading-skeleton/dist/skeleton.css";
-
 import { fr } from "@codegouvfr/react-dsfr";
 import Display from "@codegouvfr/react-dsfr/Display/Display";
 import MuiDsfrThemeProvider from "@codegouvfr/react-dsfr/mui";
@@ -31,23 +30,23 @@ const footerId = "footer";
 export const metadata: Metadata = {
   metadataBase: new URL(config.host),
   ...sharedMetadata,
-  title: {
-    template: `${config.brand.name} - %s`,
-    default: config.brand.name,
-  },
   openGraph: {
     title: {
-      template: `${config.brand.name} - %s`,
       default: config.brand.name,
+      template: `${config.brand.name} - %s`,
     },
     ...sharedMetadata.openGraph,
+  },
+  title: {
+    default: config.brand.name,
+    template: `${config.brand.name} - %s`,
   },
 };
 
 const lang = "fr";
 
 const RootLayout = async ({ children }: PropsWithChildren) => {
-  const { groups, startups } = await gistConfigClient.getConfig();
+  const { groups: _groups, startups } = await gistConfigClient.getConfig();
   const orderedStartups = await orderAndEnrichStartups(startups);
 
   return (

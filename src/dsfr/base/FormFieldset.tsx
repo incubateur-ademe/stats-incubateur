@@ -6,7 +6,7 @@ import { type PropsWithoutChildren } from "@/utils/types";
 
 import { Box } from "./Box";
 
-export type FormFieldsetProps = {
+export interface FormFieldsetProps {
   className?: CxArg;
   elements: Array<FormFieldsetElementProps | ReactNode>;
   error?: ReactNode;
@@ -15,24 +15,24 @@ export type FormFieldsetProps = {
   legentRegular?: boolean;
   nativeFieldsetProps?: PropsWithoutChildren<JSX.IntrinsicElements["fieldset"]>;
   valid?: ReactNode;
-};
+}
 
-export type FormFieldsetElementProps = {
+export interface FormFieldsetElementProps {
   children: ReactNode;
   className?: CxArg;
   inline?: boolean | "grow";
   type?: "number" | "postal" | "year";
-};
+}
 
 export const FormFieldset = ({
-  hint,
-  legend,
+  className,
   elements,
   error,
-  valid,
+  hint,
+  legend,
   legentRegular,
-  className,
   nativeFieldsetProps,
+  valid,
 }: FormFieldsetProps) => {
   const id = useId();
   const hasAssert = !!error || !!valid;
@@ -94,7 +94,7 @@ interface FormFieldsetMessageGroupProps {
   id: string;
   isValid: boolean;
 }
-const FormFieldsetMessageGroup = ({ id, isValid, children }: PropsWithChildren<FormFieldsetMessageGroupProps>) => (
+const FormFieldsetMessageGroup = ({ children, id, isValid }: PropsWithChildren<FormFieldsetMessageGroupProps>) => (
   <div className="fr-messages-group" id={id} aria-live="assertive">
     <p className={cx("fr-message", isValid ? "fr-message--valid" : "fr-message--error")}>{children}</p>
   </div>

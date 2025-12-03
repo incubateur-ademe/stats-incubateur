@@ -2,7 +2,7 @@ import { type FrCxArg, type SpacingToken } from "@codegouvfr/react-dsfr";
 
 import { type OmitStartsWith } from "@/utils/types";
 
-export type SpacingProps = {
+export interface SpacingProps {
   m?: SpacingToken | "0" | "auto";
   mb?: SpacingToken | "0" | "auto";
   ml?: SpacingToken | "0" | "auto";
@@ -17,42 +17,42 @@ export type SpacingProps = {
   pt?: SpacingToken | "0";
   px?: SpacingToken | "0";
   py?: SpacingToken | "0";
-};
+}
 
 export type ResponsiveSpacingProps = {
   [P in keyof SpacingProps as `${P}${"md"}`]?: SpacingProps[P];
 };
 
 export const buildSpacingClasses = ({
-  mt,
-  mr,
-  mb,
-  ml,
-  mx,
-  my,
-  pt,
-  pr,
-  pb,
-  pl,
-  px,
-  py,
   m,
-  p,
+  mb,
+  mbmd,
+  ml,
+  mlmd,
+  mmd,
+  mr,
+  mrmd,
+  mt,
   // responsive props
   mtmd,
-  mrmd,
-  mbmd,
-  mlmd,
+  mx,
   mxmd,
+  my,
   mymd,
-  ptmd,
-  prmd,
+  p,
+  pb,
   pbmd,
+  pl,
   plmd,
-  pxmd,
-  pymd,
-  mmd,
   pmd,
+  pr,
+  prmd,
+  pt,
+  ptmd,
+  px,
+  pxmd,
+  py,
+  pymd,
 }: ResponsiveSpacingProps & SpacingProps): FrCxArg => [
   mt && `fr-mt-${mt}`,
   mb && `fr-mb-${mb}`,

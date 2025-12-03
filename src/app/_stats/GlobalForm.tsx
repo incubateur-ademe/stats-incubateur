@@ -22,29 +22,29 @@ const DEFAULT_PERIODICITY: StatInput["periodicity"] = "month";
 
 const SINCE_OPTIONS: Record<FormType["periodicity"], Array<{ label: string; value: number }>> = {
   day: [
-    { value: 1, label: "1 jour" },
-    { value: 7, label: "1 semaine" },
-    { value: 30, label: "1 mois" },
-    { value: 90, label: "3 mois" },
-    { value: 180, label: "6 mois" },
+    { label: "1 jour", value: 1 },
+    { label: "1 semaine", value: 7 },
+    { label: "1 mois", value: 30 },
+    { label: "3 mois", value: 90 },
+    { label: "6 mois", value: 180 },
   ],
   month: [
-    { value: 1, label: "1 mois" },
-    { value: 6, label: "6 mois" },
-    { value: 12, label: "1 an" },
-    { value: 24, label: "2 ans" },
+    { label: "1 mois", value: 1 },
+    { label: "6 mois", value: 6 },
+    { label: "1 an", value: 12 },
+    { label: "2 ans", value: 24 },
   ],
   week: [
-    { value: 1, label: "1 semaine" },
-    { value: 4, label: "1 mois" },
-    { value: 12, label: "3 mois" },
-    { value: 24, label: "6 mois" },
-    { value: 52, label: "1 an" },
+    { label: "1 semaine", value: 1 },
+    { label: "1 mois", value: 4 },
+    { label: "3 mois", value: 12 },
+    { label: "6 mois", value: 24 },
+    { label: "1 an", value: 52 },
   ],
   year: [
-    { value: 1, label: "1 an" },
-    { value: 2, label: "2 ans" },
-    { value: 3, label: "3 ans" },
+    { label: "1 an", value: 1 },
+    { label: "2 ans", value: 2 },
+    { label: "3 ans", value: 3 },
   ],
 };
 
@@ -58,17 +58,17 @@ interface GlobalFormProps {
 
 export const GlobalForm = ({ startups }: GlobalFormProps) => {
   const methods = useForm<FormType>({
-    resolver: zodResolver(formSchema),
-    mode: "onChange",
     defaultValues: { periodicity: DEFAULT_PERIODICITY, since: undefined },
+    mode: "onChange",
+    resolver: zodResolver(formSchema),
   });
 
   const {
-    register,
-    watch,
     formState: { errors },
+    register,
     resetField,
     setValue,
+    watch,
   } = methods;
 
   const watchedPeriodicity = watch("periodicity");

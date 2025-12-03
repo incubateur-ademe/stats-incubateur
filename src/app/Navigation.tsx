@@ -15,22 +15,22 @@ export const Navigation = ({ startups }: NavigationProps) => {
     <MainNavigation
       items={[
         {
-          text: "Global",
+          isActive: !segment,
           linkProps: {
             href: "/",
           },
-          isActive: !segment,
+          text: "Global",
         },
         {
           isActive: startups.some(s => s.id === segment),
           menuLinks: startups
             .sort((a, b) => a.name.localeCompare(b.name))
             .map(s => ({
-              text: s.name,
+              isActive: segment === s.id,
               linkProps: {
                 href: `/${s.id}`,
               },
-              isActive: segment === s.id,
+              text: s.name,
             })),
           text: "Startups",
         },

@@ -11,7 +11,9 @@ import { Box, Container, Grid, GridCol } from "@/dsfr";
 import artworkInProgressSvgUrl from "@/dsfr/artwork/pictograms/digital/in-progress.svg";
 import { DsfrPage } from "@/dsfr/layout/DsfrPage";
 
-type SimpleSrcImage = { src: string };
+interface SimpleSrcImage {
+  src: string;
+}
 export const normalizeArtwork = (pictogram: SimpleSrcImage | string): SimpleSrcImage => {
   if (typeof pictogram === "string") {
     return { src: pictogram };
@@ -23,85 +25,86 @@ const artworkMap = {
   calendar: normalizeArtwork(artworkCalendarSvgUrl),
   inProgress: artworkInProgressSvgUrl,
   padlock: normalizeArtwork(artworkPadlockSvgUrl),
-  technicalError: normalizeArtwork(artworkTechnicalErrorSvgUrl),
   search: normalizeArtwork(artworkSearchSvgUrl),
+  technicalError: normalizeArtwork(artworkTechnicalErrorSvgUrl),
 };
 
-interface SystemCodeMap {
-  [key: string]: {
+type SystemCodeMap = Record<
+  string,
+  {
     body: ReactNode;
     headline: string;
     pictogram: SimpleSrcImage | keyof typeof artworkMap;
     title: string;
-  };
-}
+  }
+>;
 
 export const systemCodes = {
   "401": {
-    title: "Erreur de connexion",
-    headline: "Connexion non autorisée.",
     body: (
       <>
         L'identifiant avec lequel vous avez tenté de vous connecter n'est pas autorisé (compte inconnu, inactif, ou
         filtré). Si vous pensez qu'il s'agit d'une erreur, veuillez contacter un·e admin.
       </>
     ),
+    headline: "Connexion non autorisée.",
     pictogram: artworkMap.padlock,
-  },
-  get unauthorized() {
-    return this["401"];
+    title: "Erreur de connexion",
   },
   "403": {
-    title: "Accès refusé",
-    headline: "Opération non autorisée.",
     body: (
       <>
         Vous n'avez pas les droits nécessaires pour accéder à cette page. Si vous pensez qu'il s'agit d'une erreur,
         veuillez contacter un·e admin.
       </>
     ),
+    headline: "Opération non autorisée.",
     pictogram: artworkMap.padlock,
-  },
-  get forbidden() {
-    return this["403"];
+    title: "Accès refusé",
   },
   "404": {
-    title: "Page non trouvée",
-    headline: "La page que vous cherchez est introuvable. Excusez-nous pour la gène occasionnée.",
     body: (
       <>
         Si vous avez tapé l'adresse web dans le navigateur, vérifiez qu'elle est correcte. La page n’est peut-être plus
         disponible.
       </>
     ),
+    headline: "La page que vous cherchez est introuvable. Excusez-nous pour la gène occasionnée.",
     pictogram: artworkMap.search,
-  },
-  get "not-found"() {
-    return this["404"];
+    title: "Page non trouvée",
   },
   "500": {
-    title: "Erreur inattendue",
+    body: <>Essayez de rafraichir la page ou bien reessayez plus tard.</>,
     headline:
       "Désolé, le service rencontre un problème, nous travaillons pour le résoudre le plus rapidement possible.",
-    body: <>Essayez de rafraichir la page ou bien reessayez plus tard.</>,
     pictogram: artworkMap.technicalError,
+    title: "Erreur inattendue",
   },
   construction: {
-    title: "En construction",
-    headline: "Ce service est en cours de construction.",
     body: <>Nous travaillons pour le rendre disponible le plus rapidement possible.</>,
+    headline: "Ce service est en cours de construction.",
     pictogram: artworkMap.inProgress,
+    title: "En construction",
   },
-  maintenance: {
-    title: "Maintenance",
-    headline: "Le service est actuellement en maintenance.",
-    body: <>Nous travaillons pour le rétablir le plus rapidement possible.</>,
-    pictogram: artworkMap.inProgress,
+  get forbidden() {
+    return this["403"];
+  },
+  get "login-AccessDenied"() {
+    return this["401"];
   },
   get "login-AuthorizedCallbackError"() {
     return this["401"];
   },
-  get "login-AccessDenied"() {
+  maintenance: {
+    body: <>Nous travaillons pour le rétablir le plus rapidement possible.</>,
+    headline: "Le service est actuellement en maintenance.",
+    pictogram: artworkMap.inProgress,
+    title: "Maintenance",
+  },
+  get "not-found"() {
+    return this["404"];
+  },
+  get unauthorized() {
     return this["401"];
   },
 } satisfies SystemCodeMap;
@@ -139,18 +142,18 @@ namespace SystemMessageDisplayProps {
 }
 
 export const SystemMessageDisplay = ({
-  code,
-  noRedirect,
   body,
+  code,
   headline,
-  title,
+  noRedirect,
   pictogram = artworkMap.technicalError,
   redirectLink = "/",
   redirectText = "Page d'accueil",
+  title,
 }: SystemMessageDisplayProps) => {
   if (code !== "custom") {
     if (!systemCodes[code]) throw new Error(`Unknown system code: ${code}`);
-    ({ body, headline, title, pictogram } = systemCodes[code]);
+    ({ body, headline, pictogram, title } = systemCodes[code]);
   }
 
   if (typeof pictogram === "string") pictogram = artworkMap[pictogram];

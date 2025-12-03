@@ -46,7 +46,7 @@ export const ImgHero = () => {
             cx="359.09"
             cy="143.01"
             r="29.49"
-            style={{ fill: "var(--color)", transformOrigin: "359.09px 143.01px", transform: "rotate(-45deg)" }}
+            style={{ fill: "var(--color)", transform: "rotate(-45deg)", transformOrigin: "359.09px 143.01px" }}
             className={cx(style.animable)}
           ></circle>
         </g>
@@ -58,8 +58,8 @@ export const ImgHero = () => {
             style={{
               fill: "rgb(255, 255, 255)",
               opacity: 0.5,
-              transformOrigin: "359.09px 143.01px",
               transform: "rotate(-45deg)",
+              transformOrigin: "359.09px 143.01px",
             }}
             className={cx(style.animable)}
           ></circle>
@@ -206,7 +206,7 @@ export const ImgHero = () => {
             cx="163.55"
             cy="97.78"
             r="29.49"
-            style={{ fill: "var(--color)", transformOrigin: "163.55px 97.78px", transform: "rotate(-45deg)" }}
+            style={{ fill: "var(--color)", transform: "rotate(-45deg)", transformOrigin: "163.55px 97.78px" }}
             className={cx(style.animable)}
           ></circle>
         </g>
@@ -218,8 +218,8 @@ export const ImgHero = () => {
             style={{
               fill: "rgb(255, 255, 255)",
               opacity: 0.5,
-              transformOrigin: "163.55px 97.78px",
               transform: "rotate(-45deg)",
+              transformOrigin: "163.55px 97.78px",
             }}
             className={cx(style.animable)}
           ></circle>
@@ -262,9 +262,9 @@ export const ImgHero = () => {
         <text
           transform="translate(161.57 113.7)"
           style={{
-            fontSize: "7.278180122375488px",
             fill: "#fff",
             fontFamily: "Montserrat-Medium, Montserrat",
+            fontSize: "7.278180122375488px",
             fontWeight: 500,
           }}
         >
@@ -294,9 +294,9 @@ export const ImgHero = () => {
         <text
           transform="translate(151.08 103.86)"
           style={{
-            fontSize: "9.935270309448242px",
             fill: "#fff",
             fontFamily: "Montserrat-Medium, Montserrat",
+            fontSize: "9.935270309448242px",
             fontWeight: 500,
           }}
         >
@@ -326,9 +326,9 @@ export const ImgHero = () => {
         <text
           transform="translate(166.42 94.87)"
           style={{
-            fontSize: "12.497739791870117px",
             fill: "#fff",
             fontFamily: "Montserrat-Medium, Montserrat",
+            fontSize: "12.497739791870117px",
             fontWeight: 500,
           }}
         >
@@ -1981,7 +1981,7 @@ export const ImgHero = () => {
             y="254.61"
             width="1.4"
             height="7.11"
-            style={{ fill: "rgb(38, 50, 56)", transformOrigin: "286.43px 258.165px", transform: "rotate(-0.76deg)" }}
+            style={{ fill: "rgb(38, 50, 56)", transform: "rotate(-0.76deg)", transformOrigin: "286.43px 258.165px" }}
             className={cx(style.animable)}
           ></rect>
         </g>
@@ -1991,7 +1991,7 @@ export const ImgHero = () => {
             y="253.37"
             width="1.4"
             height="7.11"
-            style={{ fill: "rgb(38, 50, 56)", transformOrigin: "303.66px 256.925px", transform: "rotate(-0.76deg)" }}
+            style={{ fill: "rgb(38, 50, 56)", transform: "rotate(-0.76deg)", transformOrigin: "303.66px 256.925px" }}
             className={cx(style.animable)}
           ></rect>
         </g>
@@ -2151,7 +2151,7 @@ export const ImgHero = () => {
             y="219.04"
             width="2.08"
             height="14.63"
-            style={{ fill: "rgb(38, 50, 56)", transformOrigin: "297.96px 226.355px", transform: "rotate(38deg)" }}
+            style={{ fill: "rgb(38, 50, 56)", transform: "rotate(38deg)", transformOrigin: "297.96px 226.355px" }}
             className={cx(style.animable)}
           ></rect>
         </g>

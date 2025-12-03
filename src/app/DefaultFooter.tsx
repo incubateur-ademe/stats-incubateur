@@ -19,16 +19,16 @@ export const DefaultFooter = ({ id }: DefaultFooterProps) => (
     }}
     bottomItems={[
       {
-        text: "CGU",
         linkProps: { href: "/cgu" },
+        text: "CGU",
       },
       headerFooterDisplayItem,
       // <FooterConsentManagementItem key="FooterConsentManagementItem" />,
       {
-        text: `Version ${config.appVersion}.${config.appVersionCommit.slice(0, 7)}`,
         linkProps: {
           href: `${config.repositoryUrl}/commit/${config.appVersionCommit}` as never,
         },
+        text: `Version ${config.appVersion}.${config.appVersionCommit.slice(0, 7)}`,
       },
     ]}
     termsLinkProps={{ href: "/mentions-legales" }}

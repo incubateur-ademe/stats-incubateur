@@ -22,16 +22,16 @@ export const fetchStats = async (startupId: string, input: StatInput): Promise<S
   const { startups } = await gistConfigClient.getConfig();
   if (!startups.some(s => s.id === startupId)) {
     return {
-      ok: false,
       error: `La startup ${startupId} n'existe pas.`,
+      ok: false,
     };
   }
 
   const parsed = statInputSchema.safeParse(input);
   if (!parsed.success) {
     return {
-      ok: false,
       error: `Paramètres invalides: ${z.prettifyError(parsed.error)}`,
+      ok: false,
     };
   }
 
@@ -41,11 +41,11 @@ export const fetchStats = async (startupId: string, input: StatInput): Promise<S
   if (!startup.statsUrl) {
     console.warn(`La startup ${startupId} n'a pas d'URL de stats définie.`);
     return {
-      ok: true,
       data: {
         description: "",
         stats: [],
       },
+      ok: true,
     };
   }
 
@@ -63,8 +63,8 @@ export const fetchStats = async (startupId: string, input: StatInput): Promise<S
   if (!response.ok) {
     console.warn(`Erreur lors de la récupération des stats pour ${startup.name}:`, response.statusText);
     return {
-      ok: false,
       error: `Erreur lors de la récupération des stats pour ${startup.name}: ${response.statusText}`,
+      ok: false,
     };
   }
 
@@ -73,7 +73,7 @@ export const fetchStats = async (startupId: string, input: StatInput): Promise<S
       if (typeof value === "string") {
         return new Date(Date.parse(value));
       } else if (typeof value === "number") {
-        return new Date(value);
+        return new Date(value * 1000);
       } else {
         return null;
       }
@@ -94,10 +94,10 @@ export const fetchStats = async (startupId: string, input: StatInput): Promise<S
   });
 
   return {
-    ok: true,
     data: {
       description: json.description,
       stats,
     },
+    ok: true,
   };
 };

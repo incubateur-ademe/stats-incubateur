@@ -47,12 +47,12 @@ function collectErrors(issues: Issue | Issue[] | SimpleObject<unknown>, path: st
  */
 
 export const ReactHookFormDebug = (props: Props) => {
-  const { watch, formState, trigger } = useFormContext();
+  const { formState, trigger, watch } = useFormContext();
 
   const { collapseData = true } = props;
 
   // Can't use ...rest because nothing is returned since formState is a Proxy and must be destructured explicitly.
-  const { errors, isValid, isDirty } = props.formState || formState;
+  const { errors, isDirty, isValid } = props.formState ?? formState;
 
   const presenterErrors = Object.fromEntries(collectErrors(errors));
 

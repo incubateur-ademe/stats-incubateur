@@ -2,6 +2,14 @@ import z from "zod";
 
 import { type StartupConfig } from "@/startup-types";
 
+export interface StatRaw {
+  date: number | string; // ISO date string or timestamp
+  /**
+   * Valeur numérique de la stat demandée.
+   * Mesure de la KPI.
+   */
+  value: number;
+}
 export interface Stat {
   date: Date;
   /**
@@ -11,10 +19,10 @@ export interface Stat {
   value: number;
 }
 
-export type StatOuput = {
+export interface StatOuput {
   description?: string;
   stats: Stat[];
-};
+}
 
 export interface EnrichedStats {
   description?: string;

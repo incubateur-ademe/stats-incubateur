@@ -7,13 +7,13 @@ import { deleteAuthCookie, getAuthCookie, isAuthCookieExpired, setAuthCookie } f
 
 function getUnauthorizedResponse() {
   return new NextResponse(ReasonPhrases.UNAUTHORIZED, {
-    status: StatusCodes.UNAUTHORIZED,
     headers: { "WWW-Authenticate": `Basic realm="Admin Page", charset="UTF-8"` },
+    status: StatusCodes.UNAUTHORIZED,
   });
 }
 
 export const GET = (request: NextRequest) => {
-  const { searchParams, origin } = new URL(request.url);
+  const { origin, searchParams } = new URL(request.url);
   if (!origin.startsWith(config.host)) {
     return new NextResponse(ReasonPhrases.FORBIDDEN, { status: StatusCodes.FORBIDDEN });
   }

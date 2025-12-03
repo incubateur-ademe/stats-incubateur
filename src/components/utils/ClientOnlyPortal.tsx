@@ -1,5 +1,5 @@
 "use client";
-import { type PropsWithChildren, useEffect, useRef, useState } from "react";
+import { type PropsWithChildren, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
 export type ClientOnlyPortalProps = PropsWithChildren<{
@@ -7,13 +7,18 @@ export type ClientOnlyPortalProps = PropsWithChildren<{
 }>;
 
 export function ClientOnlyPortal({ children, selector }: ClientOnlyPortalProps) {
-  const ref = useRef<HTMLElement>(null);
+  const [container, setContainer] = useState<Element | null>(null);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    ref.current = document.querySelector(selector);
-    setMounted(true);
+    const el = document.querySelector(selector);
+    let raf = 0;
+    raf = requestAnimationFrame(() => {
+      setContainer(el);
+      setMounted(true);
+    });
+    return () => cancelAnimationFrame(raf);
   }, [selector]);
 
-  return mounted && ref.current ? createPortal(children, ref.current) : null;
+  return mounted && container ? createPortal(children, container) : null;
 }

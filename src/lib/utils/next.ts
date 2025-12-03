@@ -10,27 +10,21 @@ type PropValueAsString<T, TPropName extends string, WithPartial extends boolean 
 ]
   ? "" extends R
     ? EmptyObject
-    : {
-        [P in TPropName]: Promise<
-          WithPartial extends true ? Partial<Record<R, string[] | string>> : Record<R, string[] | string>
-        >;
-      }
+    : Record<
+        TPropName,
+        Promise<WithPartial extends true ? Partial<Record<R, string[] | string>> : Record<R, string[] | string>>
+      >
   : never;
 
 type PropValueAsObject<T, TPropName extends string, WithPartial extends boolean = true> = T extends z.ZodType
   ? never
   : T extends object
-    ? {
-        [P in TPropName]: Promise<WithPartial extends true ? Partial<T> : T>;
-      }
+    ? Record<TPropName, Promise<WithPartial extends true ? Partial<T> : T>>
     : never;
 
 type PropValueAsZod<T, TPropName extends string> = T extends z.ZodType
-  ? {
-      [P in `${TPropName}Error`]?: z.core.$ZodErrorTree<z.core.output<T>>;
-    } & {
-      [P in TPropName]: Promise<ClearObject<z.infer<T>>>;
-    }
+  ? Partial<Record<`${TPropName}Error`, z.core.$ZodErrorTree<z.core.output<T>>>> &
+      Record<TPropName, Promise<ClearObject<z.infer<T>>>>
   : never;
 
 export type NextServerPageProps<
@@ -74,7 +68,7 @@ export const withValidation =
   (page: TPage): (() => ReactElement) =>
   // @ts-expect-error - This is a hack to make the types work
   async (props: NextServerPageProps<Params, SearchParams>) => {
-    const { paramsSchema, searchParamsSchema, options, wrapper } = config;
+    const { options, paramsSchema, searchParamsSchema, wrapper } = config;
     const newProps = { ...props } as PropValueAsZod<Params, "params"> & PropValueAsZod<SearchParams, "searchParams">;
     if (paramsSchema) {
       const parseResult = await paramsSchema.safeParseAsync(await newProps.params);
@@ -133,16 +127,19 @@ export type ServerActionResponse<TData = void, TError = string> =
 /**
  * Wrap Next.js form action response to avoid bubbling up errors
  */
-export type FormActionResponse<TData = void, TError = string> = { data?: TData; errors?: TError };
+export interface FormActionResponse<TData = void, TError = string> {
+  data?: TData;
+  errors?: TError;
+}
 
 const REDIRECT_ERROR_CODE = "NEXT_REDIRECT";
 export interface NextError extends Error {
   digest?: string;
 }
 enum RedirectStatusCode {
+  PermanentRedirect = 308,
   SeeOther = 303,
   TemporaryRedirect = 307,
-  PermanentRedirect = 308,
 }
 export function isRedirectError(error: NextError): boolean {
   if (typeof error !== "object" || error === null || !("digest" in error) || typeof error.digest !== "string") {

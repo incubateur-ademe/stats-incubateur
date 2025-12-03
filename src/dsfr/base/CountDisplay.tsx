@@ -4,7 +4,7 @@ import { type ReactNode } from "react";
 
 import styles from "./CountDisplay.module.css";
 
-type BaseCountDisplayProps = {
+interface BaseCountDisplayProps {
   className?: string;
   classes?: Partial<Record<"content" | "count" | "description" | "legend" | "max" | "root" | "text", string>>;
   count: number | string;
@@ -15,7 +15,7 @@ type BaseCountDisplayProps = {
    */
   size?: "large" | "small";
   text: NonNullable<ReactNode>;
-};
+}
 
 type LargeCountDisplayProps = BaseCountDisplayProps & {
   max?: number;
@@ -30,14 +30,14 @@ type SmallCountDisplayProps = BaseCountDisplayProps & {
 export type CountDisplayProps = LargeCountDisplayProps | SmallCountDisplayProps;
 
 export const CountDisplay = ({
-  count: note,
-  noBorder,
-  max,
-  text,
-  className,
-  size = "large",
-  legend,
   classes = {},
+  className,
+  count: note,
+  legend,
+  max,
+  noBorder,
+  size = "large",
+  text,
 }: CountDisplayProps) => (
   <div
     className={cx(

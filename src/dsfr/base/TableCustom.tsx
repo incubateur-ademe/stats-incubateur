@@ -13,12 +13,12 @@ export interface TableCustomProps {
   showColWhenNullData?: boolean;
 }
 export const TableCustom = ({
-  classes,
-  compact,
-  header,
   body,
   bodyRef,
+  classes,
   className,
+  compact,
+  header,
   showColWhenNullData,
 }: TableCustomProps) => {
   const tableId = (function useClosure() {
@@ -75,10 +75,10 @@ export interface TableCustomHeadColProps extends PropsWithChildren {
 }
 export const TableCustomHeadCol = ({
   children,
-  colSpan,
-  orderDirection,
-  onClick,
   className,
+  colSpan,
+  onClick,
+  orderDirection,
 }: TableCustomHeadColProps) => (
   <th
     className={cx(style.tableHeadCol, onClick && style.tableHeadColClickable, className)}

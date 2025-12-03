@@ -48,16 +48,16 @@ export namespace IconProps {
  * Icon component, based on DSFR's Icon css component.
  */
 export const Icon = ({
-  icon,
-  onClick,
-  color,
-  size = "sm",
-  className,
-  text,
-  iconPosition = "left",
-  valign,
   align = "left",
+  className,
+  color,
+  icon,
+  iconPosition = "left",
+  onClick,
+  size = "sm",
+  text,
   textColor,
+  valign,
   ...rest
 }: IconProps) => (
   <span

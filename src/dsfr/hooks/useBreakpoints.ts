@@ -1,59 +1,41 @@
 "use client";
 
 import { breakpoints } from "@codegouvfr/react-dsfr/fr/breakpoints";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 export const useBreakpoints = () => {
-  const [isSmAndUp, setIsSmAndUp] = useState(false);
-  const [isMdAndUp, setIsMdAndUp] = useState(false);
-  const [isLgAndUp, setIsLgAndUp] = useState(false);
-  const [isXlAndUp, setIsXlAndUp] = useState(false);
+  type Breakpoint = "lg" | "md" | "sm" | "xl";
 
-  useEffect(() => {
-    const [smMediaWatcher, mdMediaWatcher, lgMediaWatcher, xlMediaWatcher] = (["sm", "md", "lg", "xl"] as const).map(
-      breakpoint => window.matchMedia(breakpoints.up(breakpoint).replace("@media ", "")),
-    );
+  const useMediaQuery = (breakpoint: Breakpoint) => {
+    const query = breakpoints.up(breakpoint).replace("@media ", "");
 
-    setIsSmAndUp(smMediaWatcher.matches);
-    setIsMdAndUp(mdMediaWatcher.matches);
-    setIsLgAndUp(lgMediaWatcher.matches);
-    setIsXlAndUp(xlMediaWatcher.matches);
-
-    const [smListener, mdListener, lgListener, xlListener] = [
-      setIsSmAndUp,
-      setIsMdAndUp,
-      setIsLgAndUp,
-      setIsXlAndUp,
-    ].map(setBreakpoint => {
-      return (event: MediaQueryListEvent) => setBreakpoint(event.matches);
-    });
-
-    if (smMediaWatcher.addEventListener) {
-      smMediaWatcher.addEventListener("change", smListener);
-      mdMediaWatcher.addEventListener("change", mdListener);
-      lgMediaWatcher.addEventListener("change", lgListener);
-      xlMediaWatcher.addEventListener("change", xlListener);
-
-      return function cleanup() {
-        smMediaWatcher.removeEventListener("change", smListener);
-        mdMediaWatcher.removeEventListener("change", mdListener);
-        lgMediaWatcher.removeEventListener("change", lgListener);
-        xlMediaWatcher.removeEventListener("change", xlListener);
-      };
-    }
-
-    smMediaWatcher.addListener(smListener);
-    mdMediaWatcher.addListener(mdListener);
-    lgMediaWatcher.addListener(lgListener);
-    xlMediaWatcher.addListener(xlListener);
-
-    return function cleanup() {
-      smMediaWatcher.removeListener(smListener);
-      mdMediaWatcher.removeListener(mdListener);
-      lgMediaWatcher.removeListener(lgListener);
-      xlMediaWatcher.removeListener(xlListener);
+    const getMedia = () => {
+      if (typeof window === "undefined") return false;
+      return window.matchMedia(query).matches;
     };
-  }, []);
 
-  return { isSmAndUp, isMdAndUp, isLgAndUp, isXlAndUp };
+    const subscribe = (notify: () => void) => {
+      if (typeof window === "undefined") return () => undefined;
+
+      const mql = window.matchMedia(query);
+      const handler = () => notify();
+
+      if (mql.addEventListener) {
+        mql.addEventListener("change", handler);
+        return () => mql.removeEventListener("change", handler);
+      }
+
+      mql.addListener(handler);
+      return () => mql.removeListener(handler);
+    };
+
+    return useSyncExternalStore(subscribe, getMedia, () => false);
+  };
+
+  const isSmAndUp = useMediaQuery("sm");
+  const isMdAndUp = useMediaQuery("md");
+  const isLgAndUp = useMediaQuery("lg");
+  const isXlAndUp = useMediaQuery("xl");
+
+  return { isLgAndUp, isMdAndUp, isSmAndUp, isXlAndUp };
 };

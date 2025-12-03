@@ -1,14 +1,15 @@
 import type OctokitTypes from "@octokit/openapi-types";
+
 import { type Octokit } from "octokit";
 
 import { type FullConfig } from "@/startup-types";
 
-export type GistConfigClientOptions = {
+export interface GistConfigClientOptions {
   /** Nom du fichier dans le gist */
   filename: string;
   /** ID du Gist */
   gistId: string;
-};
+}
 
 export interface GistConfig extends FullConfig {
   updatedAt?: string; // ISO date
@@ -37,9 +38,9 @@ export class GistConfigClient {
     delete copy.version;
     const content = JSON.stringify(copy, null, 2);
     await this.#octokit.rest.gists.update({
-      gist_id: this.#gistId,
       description,
       files: { [this.#filename]: { content } },
+      gist_id: this.#gistId,
     });
   }
 
@@ -47,14 +48,14 @@ export class GistConfigClient {
   public async getHistory(per_page = 30, page = 1): Promise<Array<OctokitTypes.components["schemas"]["gist-history"]>> {
     const { data } = await this.#octokit.rest.gists.listCommits({
       gist_id: this.#gistId,
-      per_page,
       page,
+      per_page,
     });
     return data.map(c => ({
-      version: c.version,
-      committed_at: c.committed_at,
       change_status: c.change_status,
+      committed_at: c.committed_at,
       url: c.url,
+      version: c.version,
     }));
   }
 

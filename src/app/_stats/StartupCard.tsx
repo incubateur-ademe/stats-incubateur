@@ -31,8 +31,8 @@ const TICK_INTERVALS: Record<StatInput["periodicity"], number> = {
 };
 
 const FORMATERS = {
-  day: new Intl.DateTimeFormat("fr-FR", { year: "numeric", month: "2-digit", day: "2-digit" }),
-  month: new Intl.DateTimeFormat("fr-FR", { year: "numeric", month: "2-digit" }),
+  day: new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" }),
+  month: new Intl.DateTimeFormat("fr-FR", { month: "2-digit", year: "numeric" }),
   week: new Intl.DateTimeFormat("fr-FR"),
   year: new Intl.DateTimeFormat("fr-FR", { year: "numeric" }),
 } as const;
@@ -48,24 +48,23 @@ const dateFormatter = (date: Date, periodicity: keyof typeof FORMATERS = DEFAULT
   return FORMATERS[periodicity].format(date);
 };
 
-type StartupCardProps = {
+interface StartupCardProps {
   input: StatInput;
   startup: EnrichedStartup;
-};
+}
 
-export function StartupCard({ startup, input }: StartupCardProps) {
+export function StartupCard({ input, startup }: StartupCardProps) {
   const mounted = useHasMounted();
 
   const query = useQuery({
-    queryKey: ["stats", startup.id, input.periodicity, input.since ?? null],
+    // garde les données précédentes pendant le refetch quand l'input change
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       const res = await fetchStats(startup.id, input);
       if (!res.ok) throw new Error(res.error || "Erreur lors de la récupération des données.");
-      // On renvoie directement EnrichedStats
       return res.data;
     },
-    // garde les données précédentes pendant le refetch quand l'input change
-    placeholderData: keepPreviousData,
+    queryKey: ["stats", startup.id, input.periodicity, input.since ?? null],
   });
 
   const periodicity = input.periodicity;
@@ -97,15 +96,15 @@ export function StartupCard({ startup, input }: StartupCardProps) {
           isReverseOrder
           buttons={[
             {
-              linkProps: { href: `/${startup.id}` },
               children: "Détails",
+              linkProps: { href: `/${startup.id}` },
               priority: "secondary",
             },
             ...((startup.website
               ? [
                   {
-                    linkProps: { href: startup.website, target: "_blank" },
                     children: "Site",
+                    linkProps: { href: startup.website, target: "_blank" },
                     priority: "tertiary",
                   },
                 ]

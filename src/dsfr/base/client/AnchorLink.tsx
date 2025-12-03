@@ -7,7 +7,7 @@ export interface AnchorLinkProps {
   as?: "h1" | "h2" | "h3";
   iconSize?: "lg" | "sm" | "xl";
 }
-export const AnchorLink = ({ anchor, children, as: HtmlTag = "h3", iconSize }: PropsWithChildren<AnchorLinkProps>) => {
+export const AnchorLink = ({ anchor, as: HtmlTag = "h3", children, iconSize }: PropsWithChildren<AnchorLinkProps>) => {
   return (
     <>
       <style jsx>{`

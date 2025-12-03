@@ -7,16 +7,16 @@ const description = config.brand.tagline;
 export const sharedMetadata: Metadata = {
   description,
   openGraph: {
-    description,
-    type: "website",
-    locale: "fr_FR",
     countryName: "France",
-    siteName: config.brand.name,
+    description,
     images: [
       {
-        url: new URL(`/img/ademe-incubateur-logo.png`, config.host),
         alt: config.brand.name,
+        url: new URL(`/img/ademe-incubateur-logo.png`, config.host),
       },
     ],
+    locale: "fr_FR",
+    siteName: config.brand.name,
+    type: "website",
   },
 };

@@ -9,7 +9,7 @@ export const gistConfigClient = new GistConfigClient(
     auth: config.gistConfig.token,
   }),
   {
-    gistId: config.gistConfig.gistId,
     filename: config.gistConfig.filename,
+    gistId: config.gistConfig.gistId,
   },
 );

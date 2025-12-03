@@ -15,21 +15,21 @@ export type TypographyProps = PropsWithChildren<
 
 const typographyProps = <P extends PropsWithoutChildren<TypographyProps>>({
   className,
-  mt,
-  mr,
   mb,
   ml,
+  mr,
+  mt,
   mx,
   my,
-  pt,
-  pr,
   pb,
   pl,
+  pr,
+  pt,
   px,
   py,
   ...rest
 }: P) => ({
-  className: cx(fr.cx(buildSpacingClasses({ mt, mr, mb, ml, mx, my, pt, pr, pb, pl, px, py })), className),
+  className: cx(fr.cx(buildSpacingClasses({ mb, ml, mr, mt, mx, my, pb, pl, pr, pt, px, py })), className),
   ...rest,
 });
 
@@ -122,7 +122,7 @@ const textProps = ({ variant, ...rest }: Omit<TextProps<boolean>, "inline" | "te
 /**
  * @see https://www.systeme-de-design.gouv.fr/elements-d-interface/fondamentaux-de-l-identite-de-l-etat/typographie/#:~:text=Corps%20de%20texte
  */
-export const Text = <Inline extends boolean>({ inline, children, ...rest }: TextProps<Inline>) =>
+export const Text = <Inline extends boolean>({ children, inline, ...rest }: TextProps<Inline>) =>
   inline ? <span {...textProps(rest)}>{children}</span> : <p {...textProps(rest)}>{children}</p>;
 
 /**

@@ -36,13 +36,13 @@ export namespace RecapCardProps {
 }
 
 export const RecapCard = ({
+  classes = {},
   className,
   content: textContent,
-  title,
   editLink,
   sideButtonProps,
   stats,
-  classes = {},
+  title,
 }: RecapCardProps) => (
   <div className={cx(styles["fr-recap-card"], className, classes.root)}>
     <div className={cx(styles["fr-recap-card__title"], classes.title)}>

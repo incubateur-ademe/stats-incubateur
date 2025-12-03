@@ -37,10 +37,10 @@ export function getMaterialAvatarProps(name: string): AvatarProps {
   const initials = getInitials(name);
   const background = generateBackground(name);
   return {
+    children: initials,
     sx: {
       bgcolor: background[0],
       color: background[1],
     },
-    children: initials,
   };
 }

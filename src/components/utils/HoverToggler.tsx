@@ -10,7 +10,7 @@ export interface HoverTogglerProps {
   normal: ReactNode;
 }
 
-export const HoverToggler = ({ normal, hover, as: Component = "div", className }: HoverTogglerProps) => {
+export const HoverToggler = ({ as: Component = "div", className, hover, normal }: HoverTogglerProps) => {
   const [isHover, setIsHover] = useState(false);
 
   return (

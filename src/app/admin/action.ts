@@ -11,8 +11,8 @@ export const saveConfig = async (config: FullConfig): Promise<ServerActionRespon
 
   if (!result.success) {
     return {
-      ok: false,
       error: z.flattenError(result.error).formErrors.join(", "),
+      ok: false,
     };
   }
 
