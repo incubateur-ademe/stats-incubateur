@@ -27,7 +27,7 @@ export const config = {
         ),
       },
     },
-    tagline: "Statistiques des startups incubés par l'ADEME",
+    tagline: "Statistiques des startups incubées par l'ADEME",
   },
   env: ensureApiEnvVar<"dev" | "prod" | "review" | "staging">(process.env.APP_ENV, "dev"),
   gistConfig: {

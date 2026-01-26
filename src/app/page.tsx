@@ -2,10 +2,9 @@ import { type Metadata } from "next";
 
 import { Container } from "@/dsfr";
 import { DsfrPage } from "@/dsfr/layout/DsfrPage";
-import { gistConfigClient } from "@/lib/db/gist/client";
 
 import { GlobalForm } from "./_stats/GlobalForm";
-import { orderAndEnrichStartups } from "./_stats/utils";
+import { getOrderedStartups } from "./_stats/utils";
 import { sharedMetadata } from "./shared-metadata";
 
 const url = "/";
@@ -22,18 +21,7 @@ export const metadata: Metadata = {
 };
 
 const Home = async () => {
-  // TODO: use context inside client component instead of fetching again
-  const { groups: _groups, startups } = await gistConfigClient.getConfig();
-
-  const orderedStartups = await orderAndEnrichStartups(startups);
-
-  // const request = pvLivraisonTable.select({
-  //   view: "viw6wX4jpRH1BpSLw",
-  // });
-
-  // const pvs = await request.all();
-
-  // console.log("============", pvs[0]._rawJson?.fields?.Intitulé);
+  const orderedStartups = await getOrderedStartups();
 
   return (
     <DsfrPage>

@@ -6,8 +6,7 @@ export const fetchBetaStartup = async (id: string) => {
     next: { revalidate: 3600 }, // 1 hour
   });
   if (!res.ok) {
-    console.log("======", `${config.betaGouvUrl}/api/startups/${id}.json`);
-    throw new Error(`Failed to fetch startup data for id ${id}: ${res.statusText}`);
+    throw new Error(`Failed to fetch startup data for id ${id}: ${res.statusText} (url: ${res.url})`);
   }
   return res.json() as Promise<BetaGouvStartup>;
 };

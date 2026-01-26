@@ -3,24 +3,14 @@
 import z from "zod";
 
 import { gistConfigClient } from "@/lib/db/gist/client";
-import { fetchBetaStartup } from "@/lib/fetchBetaStartup";
-import { type StartupConfig } from "@/startup-types";
 import { type ServerActionResponse } from "@/utils/next";
 
-import { type EnrichedStartup, type EnrichedStats, type StatInput, statInputSchema, type StatOuput } from "./types";
-
-async function enrichStartup(startup: StartupConfig): Promise<EnrichedStartup> {
-  const bs = await fetchBetaStartup(startup.id);
-  return {
-    ...startup,
-    name: bs.name,
-    website: bs.stats_url ?? undefined,
-  };
-}
+import { type EnrichedStats, type StatInput, statInputSchema, type StatOuput } from "./types";
 
 export const fetchStats = async (startupId: string, input: StatInput): Promise<ServerActionResponse<EnrichedStats>> => {
   const { startups } = await gistConfigClient.getConfig();
-  if (!startups.some(s => s.id === startupId)) {
+  const startup = startups.find(s => s.id === startupId);
+  if (!startup) {
     return {
       error: `La startup ${startupId} n'existe pas.`,
       ok: false,
@@ -36,7 +26,6 @@ export const fetchStats = async (startupId: string, input: StatInput): Promise<S
   }
 
   const { periodicity, since = 0 } = parsed.data;
-  const startup = await enrichStartup(startups.find(s => s.id === startupId)!);
 
   if (!startup.statsUrl) {
     console.warn(`La startup ${startupId} n'a pas d'URL de stats définie.`);
@@ -61,9 +50,9 @@ export const fetchStats = async (startupId: string, input: StatInput): Promise<S
   });
 
   if (!response.ok) {
-    console.warn(`Erreur lors de la récupération des stats pour ${startup.name}:`, response.statusText);
+    console.warn(`Erreur lors de la récupération des stats pour ${startupId}:`, response.statusText);
     return {
-      error: `Erreur lors de la récupération des stats pour ${startup.name}: ${response.statusText}`,
+      error: `Erreur lors de la récupération des stats pour ${startupId}: ${response.statusText}`,
       ok: false,
     };
   }

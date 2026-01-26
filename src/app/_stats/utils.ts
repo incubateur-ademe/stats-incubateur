@@ -1,3 +1,6 @@
+import { cache } from "react";
+
+import { gistConfigClient } from "@/lib/db/gist/client";
 import { fetchBetaStartup } from "@/lib/fetchBetaStartup";
 import { type StartupConfig } from "@/startup-types";
 
@@ -21,3 +24,12 @@ export const orderAndEnrichStartups = async (startups: StartupConfig[]): Promise
     if (!a.statsUrl && b.statsUrl) return 1;
     return (a.nameOverride ?? a.name).localeCompare(b.nameOverride ?? b.name);
   });
+
+/**
+ * Per-request cached version of getConfig + orderAndEnrichStartups.
+ * Deduplicates across layout.tsx and page.tsx within the same render.
+ */
+export const getOrderedStartups = cache(async () => {
+  const { startups } = await gistConfigClient.getConfig();
+  return orderAndEnrichStartups(startups);
+});

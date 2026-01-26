@@ -14,9 +14,8 @@ import { ClientAnimate } from "@/components/utils/ClientAnimate";
 import { config } from "@/config";
 import { DsfrProvider } from "@/dsfr-bootstrap";
 import { DsfrHead, getHtmlAttributes } from "@/dsfr-bootstrap/server-only-index";
-import { gistConfigClient } from "@/lib/db/gist/client";
 
-import { orderAndEnrichStartups } from "./_stats/utils";
+import { getOrderedStartups } from "./_stats/utils";
 import { DefaultFooter } from "./DefaultFooter";
 import { DefaultHeader } from "./DefaultHeader";
 import { QueryProvider } from "./QueryProvider";
@@ -46,24 +45,12 @@ export const metadata: Metadata = {
 const lang = "fr";
 
 const RootLayout = async ({ children }: PropsWithChildren) => {
-  const { groups: _groups, startups } = await gistConfigClient.getConfig();
-  const orderedStartups = await orderAndEnrichStartups(startups);
+  const orderedStartups = await getOrderedStartups();
 
   return (
     <html lang={lang} {...getHtmlAttributes({ lang })} className={cx(styles.app, "snap-y")}>
       <head>
-        <DsfrHead
-          preloadFonts={[
-            "Marianne-Light",
-            "Marianne-Light_Italic",
-            "Marianne-Regular",
-            "Marianne-Regular_Italic",
-            "Marianne-Medium",
-            "Marianne-Medium_Italic",
-            "Marianne-Bold",
-            "Marianne-Bold_Italic",
-          ]}
-        />
+        <DsfrHead preloadFonts={["Marianne-Regular", "Marianne-Medium", "Marianne-Bold"]} />
       </head>
       <body>
         <QueryProvider>

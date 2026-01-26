@@ -17,6 +17,20 @@ import {
 } from "@mui/x-charts/models";
 import { useId } from "react";
 
+/** CSS-variable-based fill so axis text responds to dark mode instantly (not delayed by MUI theme re-render). */
+const axisTextFill = { fill: fr.colors.decisions.text.default.grey.default } as const;
+
+/** Hoisted to avoid re-creating on every formatter call (Intl constructors are expensive). */
+const compactNumberFormat = new Intl.NumberFormat("fr-FR", {
+  compactDisplay: "short",
+  notation: "compact",
+});
+
+const defaultBarValueFormatter: YAxis<"linear">["valueFormatter"] = value => {
+  const intValue = parseInt(value as string);
+  return isNaN(intValue) ? (value as string) : compactNumberFormat.format(intValue);
+};
+
 const BAR_SERIE: BarSeriesType = {
   color: fr.colors.options.blueFrance.sun113_625.default,
   highlightScope: { fade: "series", highlight: "item" },
@@ -55,15 +69,7 @@ export const MuiBarLineChart = ({
   barAxisWidth = 60,
   barData,
   barId,
-  barValueFormatter = value => {
-    const intValue = parseInt(value as string);
-    return isNaN(intValue)
-      ? (value as string)
-      : new Intl.NumberFormat("fr-FR", {
-          compactDisplay: "short",
-          notation: "compact",
-        }).format(intValue);
-  },
+  barValueFormatter = defaultBarValueFormatter,
   height = 400,
   lineAxisWidth = 50,
   lineData,
@@ -139,10 +145,22 @@ export const MuiBarLineChart = ({
         }}
         tickLabelStyle={{
           fontSize: 10,
+          ...axisTextFill,
         }}
+        labelStyle={axisTextFill}
       />
-      <ChartsYAxis label={barSerie.label as string} axisId={barSerie.yAxisId} tickLabelStyle={{ fontSize: 10 }} />
-      <ChartsYAxis label={lineSerie.label as string} axisId={lineSerie.yAxisId} tickLabelStyle={{ fontSize: 10 }} />
+      <ChartsYAxis
+        label={barSerie.label as string}
+        axisId={barSerie.yAxisId}
+        tickLabelStyle={{ fontSize: 10, ...axisTextFill }}
+        labelStyle={axisTextFill}
+      />
+      <ChartsYAxis
+        label={lineSerie.label as string}
+        axisId={lineSerie.yAxisId}
+        tickLabelStyle={{ fontSize: 10, ...axisTextFill }}
+        labelStyle={axisTextFill}
+      />
       <ChartsTooltip />
     </ChartContainer>
   );

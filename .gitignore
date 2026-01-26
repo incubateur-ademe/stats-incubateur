@@ -69,3 +69,4 @@ certificates
 
 /src/generated/*
 !/src/generated/.gitattributes
+next-env.d.ts
