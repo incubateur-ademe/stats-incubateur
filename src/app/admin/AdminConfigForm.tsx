@@ -48,7 +48,10 @@ export const AdminConfigForm = ({ initialBetaNames = {}, initialConfig }: Props)
   // Prevenir la fermeture accidentelle avec des modifications non sauvegardees
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
-      if (isDirty) e.preventDefault();
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
     };
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
@@ -295,17 +298,7 @@ export const AdminConfigForm = ({ initialBetaNames = {}, initialConfig }: Props)
                 <Button
                   priority="secondary"
                   size="small"
-                  onClick={() => {
-                    groupsFA.append({ description: "", enabled: true, id: "", name: "" });
-                    // Auto-expand la nouvelle card
-                    setTimeout(
-                      () =>
-                        setExpandedGroups(
-                          prev => new Set([...prev, groupsFA.fields[groupsFA.fields.length - 1]?.id ?? ""]),
-                        ),
-                      50,
-                    );
-                  }}
+                  onClick={() => groupsFA.append({ description: "", enabled: true, id: "", name: "" })}
                 >
                   + Ajouter
                 </Button>
@@ -338,17 +331,17 @@ export const AdminConfigForm = ({ initialBetaNames = {}, initialConfig }: Props)
                   return null;
                 }
 
-                const isExpanded = expandedGroups.has(g.id);
+                const isExpanded = expandedGroups.has(g.id) || !gValues?.id;
                 const displayName = gValues?.name || gValues?.id || "(nouveau)";
                 const isGroupEnabled = gValues?.enabled !== false;
 
                 return (
                   <div key={g.id} className={styles.card + " fr-background-alt--blue-france fr-radius-8"}>
                     <div className={styles.cardSummary}>
-                      <div className={styles.cardSummaryLeft} onClick={() => toggleGroup(g.id)}>
+                      <button type="button" className={styles.cardSummaryLeft} onClick={() => toggleGroup(g.id)}>
                         {gValues?.id && <span className={styles.cardId}>{gValues.id}</span>}
                         <span className={styles.cardName}>{displayName}</span>
-                      </div>
+                      </button>
                       <div className={styles.cardSummaryRight}>
                         <Button
                           priority="tertiary no outline"
@@ -494,7 +487,7 @@ export const AdminConfigForm = ({ initialBetaNames = {}, initialConfig }: Props)
                   return null;
                 }
 
-                const isExpanded = expandedStartups.has(s.id);
+                const isExpanded = expandedStartups.has(s.id) || !sValues?.id;
                 const sid = sValues?.id ?? "";
                 const betaName = betaNames[sid];
                 const hasOverride = !!sValues?.nameOverride;
@@ -507,7 +500,7 @@ export const AdminConfigForm = ({ initialBetaNames = {}, initialConfig }: Props)
                 return (
                   <div key={s.id} className={styles.card + " fr-background-alt--grey fr-radius-8"}>
                     <div className={styles.cardSummary}>
-                      <div className={styles.cardSummaryLeft} onClick={() => toggleStartup(s.id)}>
+                      <button type="button" className={styles.cardSummaryLeft} onClick={() => toggleStartup(s.id)}>
                         {sid && <span className={styles.cardId}>{sid}</span>}
                         <span className={styles.cardName}>{displayName}</span>
                         {sid && betaNotFound.has(sid) && (
@@ -520,7 +513,7 @@ export const AdminConfigForm = ({ initialBetaNames = {}, initialConfig }: Props)
                             Stats
                           </Badge>
                         )}
-                      </div>
+                      </button>
                       <div className={styles.cardSummaryRight}>
                         <Button
                           priority="tertiary no outline"

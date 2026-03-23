@@ -40,8 +40,10 @@ yarn start        # Serveur de production
 
 ### Admin
 
-- `src/app/admin/` : panneau d'administration pour éditer la config Gist
-- Auth HTTP Basic via `ADMIN_LOGIN`/`ADMIN_PASSWORD` (route `src/app/admin/auth/route.ts`)
+- `src/app/admin/` : panneau d'administration pour editer la config Gist
+- Auth via formulaire `/admin/login` + cookie session (1h), route group `(protected)` pour le guard
+- Auth legacy HTTP Basic toujours disponible via `/admin/auth` (compatibilite)
+- Server actions protegees par `assertAuth()` (verification cookie)
 
 ### Patterns clés
 
