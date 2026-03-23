@@ -1,7 +1,8 @@
 "use client";
 "use no memo";
 
-import ButtonsGroup from "@codegouvfr/react-dsfr/ButtonsGroup";
+import Badge from "@codegouvfr/react-dsfr/Badge";
+import Button from "@codegouvfr/react-dsfr/Button";
 import Checkbox from "@codegouvfr/react-dsfr/Checkbox";
 import Input from "@codegouvfr/react-dsfr/Input";
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
@@ -9,7 +10,7 @@ import { startTransition, useEffect, useMemo, useState } from "react";
 import { Controller, FormProvider, useFieldArray, useForm } from "react-hook-form";
 
 import { ClientAnimate } from "@/components/utils/ClientAnimate";
-import { Grid, GridCol } from "@/dsfr";
+import { Grid, GridCol, Icon } from "@/dsfr";
 import { type FullConfig, FullConfigSchema } from "@/startup-types";
 
 import { saveConfig } from "./action";
@@ -41,10 +42,18 @@ export const AdminConfigForm = ({ initialConfig }: Props) => {
     watch,
   } = methods;
 
-  // Valider au montage pour afficher les erreurs de la config initiale
   useEffect(() => {
     void trigger();
   }, [trigger]);
+
+  // Prevenir la fermeture accidentelle avec des modifications non sauvegardees
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (isDirty) e.preventDefault();
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty]);
 
   const groupsFA = useFieldArray({ control, name: "groups" });
   const startupsFA = useFieldArray({ control, name: "startups" });
@@ -54,21 +63,52 @@ export const AdminConfigForm = ({ initialConfig }: Props) => {
   const [status, setStatus] = useState<{ text: string; type: "err" | "ok" } | null>(null);
   const [groupSearch, setGroupSearch] = useState("");
   const [startupSearch, setStartupSearch] = useState("");
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [expandedStartups, setExpandedStartups] = useState<Set<string>>(new Set());
+  const [confirmDeleteGroup, setConfirmDeleteGroup] = useState<number | null>(null);
+  const [confirmDeleteStartup, setConfirmDeleteStartup] = useState<number | null>(null);
+
+  // Auto-dismiss du status apres 5s pour les succes
+  useEffect(() => {
+    if (status?.type === "ok") {
+      const t = setTimeout(() => setStatus(null), 5000);
+      return () => clearTimeout(t);
+    }
+  }, [status]);
+
+  const toggleGroup = (id: string) => {
+    setExpandedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleStartup = (id: string) => {
+    setExpandedStartups(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   const onSubmit = handleSubmit(async data => {
     setStatus(null);
     const res = await saveConfig(data);
     if (res.ok) {
-      setStatus({ text: "Configuration sauvegardée ✅", type: "ok" });
-      startTransition(() => reset(data)); // reset du dirty state
+      setStatus({ text: "Configuration sauvegardee", type: "ok" });
+      startTransition(() => reset(data));
     } else {
-      setStatus({ text: res.error || "Échec de la sauvegarde", type: "err" });
+      setStatus({ text: res.error || "Echec de la sauvegarde", type: "err" });
     }
   });
 
   const removeGroupAt = (index: number) => {
     const gid = getValues(`groups.${index}.id`);
     groupsFA.remove(index);
+    setConfirmDeleteGroup(null);
     if (gid) {
       const startups = getValues("startups");
       startups?.forEach((_, si) => {
@@ -77,10 +117,7 @@ export const AdminConfigForm = ({ initialConfig }: Props) => {
           setValue(
             `startups.${si}.groups`,
             arr.filter((x: string) => x !== gid),
-            {
-              shouldDirty: true,
-              shouldValidate: true,
-            },
+            { shouldDirty: true, shouldValidate: true },
           );
         }
       });
@@ -89,6 +126,7 @@ export const AdminConfigForm = ({ initialConfig }: Props) => {
 
   const removeStartupAt = (index: number) => {
     startupsFA.remove(index);
+    setConfirmDeleteStartup(null);
   };
 
   const handleExportCsv = () => {
@@ -110,7 +148,7 @@ export const AdminConfigForm = ({ initialConfig }: Props) => {
       try {
         const parsed = parseConfigFromCsv(reader.result as string);
         reset(parsed, { keepDirty: false });
-        setStatus({ text: "CSV importe avec succes. Verifiez et enregistrez.", type: "ok" });
+        setStatus({ text: "CSV importe. Verifiez et enregistrez.", type: "ok" });
       } catch {
         setStatus({ text: "Erreur lors du parsing du fichier CSV.", type: "err" });
       }
@@ -129,35 +167,32 @@ export const AdminConfigForm = ({ initialConfig }: Props) => {
         .filter(o => o.id),
     [watchedGroups],
   );
+
+  // Compteurs pour le filtre
+  const filteredGroupCount = groupsFA.fields.filter((_, i) => {
+    if (!groupSearch) return true;
+    const g = watchedGroups[i];
+    return (
+      (g?.id ?? "").toLowerCase().includes(groupSearch.toLowerCase()) ||
+      (g?.name ?? "").toLowerCase().includes(groupSearch.toLowerCase())
+    );
+  }).length;
+
+  const filteredStartupCount = startupsFA.fields.filter((_, si) => {
+    if (!startupSearch) return true;
+    const s = getValues(`startups.${si}`);
+    return (
+      (s?.id ?? "").toLowerCase().includes(startupSearch.toLowerCase()) ||
+      (s?.nameOverride ?? "").toLowerCase().includes(startupSearch.toLowerCase())
+    );
+  }).length;
+
   return (
     <FormProvider {...methods}>
       <form onSubmit={onSubmit} className={styles.root}>
-        {/* <ReactHookFormDebug /> */}
+        {/* Barre d'actions */}
         <div className={styles.actions}>
-          <ButtonsGroup
-            alignment="right"
-            inlineLayoutWhen="always"
-            buttons={[
-              {
-                children: "Reinitialiser",
-                disabled: isSubmitting,
-                onClick: () => reset(initialConfig),
-                priority: "secondary",
-              },
-              {
-                children: isSubmitting ? "Sauvegarde en cours..." : "Enregistrer",
-                disabled: !isDirty || !isValid || isSubmitting,
-                priority: "primary",
-                type: "submit",
-              },
-            ]}
-          />
-          {status && (
-            <div className={`fr-alert ${status.type === "ok" ? "fr-alert--success" : "fr-alert--error"} fr-mt-2w`}>
-              <p>{status.text}</p>
-            </div>
-          )}
-          <div className="fr-mt-1w" style={{ display: "flex", gap: "0.5rem" }}>
+          <div className={styles.actionsLeft}>
             <button type="button" className="fr-btn fr-btn--tertiary fr-btn--sm" onClick={handleExportCsv}>
               Exporter CSV
             </button>
@@ -166,35 +201,67 @@ export const AdminConfigForm = ({ initialConfig }: Props) => {
               <input type="file" accept=".csv" onChange={handleImportCsv} style={{ display: "none" }} />
             </label>
           </div>
-          <ConfigHistory />
+
+          <div className={styles.actionsRight}>
+            {isDirty && <span className={styles.dirtyBadge}>Modifications non sauvegardees</span>}
+            <Button priority="secondary" disabled={isSubmitting || !isDirty} onClick={() => reset(initialConfig)}>
+              Reinitialiser
+            </Button>
+            <Button priority="primary" type="submit" disabled={!isDirty || !isValid || isSubmitting}>
+              {isSubmitting ? "Sauvegarde..." : "Enregistrer"}
+            </Button>
+          </div>
+
+          {status && (
+            <div
+              className={`${styles.statusBar} fr-alert ${status.type === "ok" ? "fr-alert--success" : "fr-alert--error"}`}
+            >
+              <p>{status.text}</p>
+            </div>
+          )}
         </div>
 
         <div className={styles.columns}>
+          {/* Colonne Groupes */}
           <section className={styles.col} aria-labelledby="col-groups-title">
             <div className={styles.colHeader}>
-              <h2 id="col-groups-title" className="fr-h4 fr-mb-0">
-                Groupes
-              </h2>
-              <ButtonsGroup
-                inlineLayoutWhen="always"
-                buttons={[
-                  {
-                    children: "Ajouter un groupe",
-                    onClick: () => groupsFA.append({ description: "", enabled: true, id: "", name: "" }),
-                    priority: "secondary",
-                  },
-                ]}
-              />
-              {groupsFA.fields.length > 3 && (
-                <Input
-                  iconId="fr-icon-search-line"
-                  label=""
-                  nativeInputProps={{
-                    onChange: e => setGroupSearch(e.target.value),
-                    placeholder: "Filtrer les groupes...",
-                    value: groupSearch,
+              <div className={styles.colHeaderTop}>
+                <h2 id="col-groups-title" className="fr-h4 fr-mb-0">
+                  Groupes{" "}
+                  <Badge severity="info" small noIcon>
+                    {groupSearch ? `${filteredGroupCount}/${groupsFA.fields.length}` : groupsFA.fields.length}
+                  </Badge>
+                </h2>
+                <Button
+                  priority="secondary"
+                  size="small"
+                  onClick={() => {
+                    groupsFA.append({ description: "", enabled: true, id: "", name: "" });
+                    // Auto-expand la nouvelle card
+                    setTimeout(
+                      () =>
+                        setExpandedGroups(
+                          prev => new Set([...prev, groupsFA.fields[groupsFA.fields.length - 1]?.id ?? ""]),
+                        ),
+                      50,
+                    );
                   }}
-                />
+                >
+                  + Ajouter
+                </Button>
+              </div>
+              {groupsFA.fields.length > 3 && (
+                <div className={styles.colHeaderSearch}>
+                  <Input
+                    iconId="fr-icon-search-line"
+                    label=""
+                    nativeInputProps={{
+                      onChange: e => setGroupSearch(e.target.value),
+                      placeholder: "Filtrer...",
+                      value: groupSearch,
+                    }}
+                  />
+                </div>
               )}
             </div>
 
@@ -210,88 +277,142 @@ export const AdminConfigForm = ({ initialConfig }: Props) => {
                 ) {
                   return null;
                 }
+
+                const isExpanded = expandedGroups.has(g.id);
+                const displayName = gValues?.name || gValues?.id || "(nouveau)";
+
                 return (
                   <div key={g.id} className={styles.card + " fr-background-alt--blue-france fr-radius-8"}>
-                    <Grid haveGutters>
-                      <GridCol base={12} sm={6}>
-                        <Input
-                          label="ID"
-                          nativeInputProps={{ ...register(`groups.${i}.id`) }}
-                          state={errors?.groups?.[i]?.id ? "error" : "default"}
-                          stateRelatedMessage={errors?.groups?.[i]?.id?.message}
-                        />
-                      </GridCol>
-                      <GridCol base={12} sm={6}>
-                        <Input
-                          label="Nom"
-                          nativeInputProps={{ ...register(`groups.${i}.name`) }}
-                          state={errors?.groups?.[i]?.name ? "error" : "default"}
-                          stateRelatedMessage={errors?.groups?.[i]?.name?.message}
-                        />
-                      </GridCol>
-                      <GridCol base={12} sm={9}>
-                        <Input
-                          label="Description (optionnelle)"
-                          textArea
-                          nativeTextAreaProps={{ ...register(`groups.${i}.description`) }}
-                          state={errors?.groups?.[i]?.description ? "error" : "default"}
-                          stateRelatedMessage={errors?.groups?.[i]?.description?.message}
-                        />
-                      </GridCol>
-                      <GridCol base={12} sm={3}>
-                        <Checkbox
-                          options={[
-                            {
-                              label: "Activé",
-                              nativeInputProps: { ...register(`groups.${i}.enabled`) },
-                            },
-                          ]}
-                        />
-                      </GridCol>
-                    </Grid>
-                    <div className="fr-mt-2w">
-                      <ButtonsGroup
-                        inlineLayoutWhen="always"
-                        buttons={[
-                          {
-                            children: "Supprimer",
-                            onClick: () => removeGroupAt(i),
-                            priority: "tertiary",
-                          },
-                        ]}
+                    <div className={styles.cardSummary} onClick={() => toggleGroup(g.id)}>
+                      <div className={styles.cardSummaryLeft}>
+                        {gValues?.id && <span className={styles.cardId}>{gValues.id}</span>}
+                        <span className={styles.cardName}>{displayName}</span>
+                        {gValues?.enabled === false && (
+                          <Badge severity="warning" small noIcon>
+                            Desactive
+                          </Badge>
+                        )}
+                      </div>
+                      <Icon
+                        icon="fr-icon-arrow-down-s-line"
+                        size="lg"
+                        className={styles.cardChevron}
+                        data-open={isExpanded}
                       />
                     </div>
+
+                    {isExpanded && (
+                      <>
+                        <Grid haveGutters className="fr-mt-2w">
+                          <GridCol base={12} sm={6}>
+                            <Input
+                              label="ID"
+                              nativeInputProps={{ ...register(`groups.${i}.id`) }}
+                              state={errors?.groups?.[i]?.id ? "error" : "default"}
+                              stateRelatedMessage={errors?.groups?.[i]?.id?.message}
+                            />
+                          </GridCol>
+                          <GridCol base={12} sm={6}>
+                            <Input
+                              label="Nom"
+                              nativeInputProps={{ ...register(`groups.${i}.name`) }}
+                              state={errors?.groups?.[i]?.name ? "error" : "default"}
+                              stateRelatedMessage={errors?.groups?.[i]?.name?.message}
+                            />
+                          </GridCol>
+                          <GridCol base={12} sm={9}>
+                            <Input
+                              label="Description"
+                              textArea
+                              nativeTextAreaProps={{ ...register(`groups.${i}.description`) }}
+                              state={errors?.groups?.[i]?.description ? "error" : "default"}
+                              stateRelatedMessage={errors?.groups?.[i]?.description?.message}
+                            />
+                          </GridCol>
+                          <GridCol base={12} sm={3}>
+                            <Checkbox
+                              options={[
+                                {
+                                  label: "Active",
+                                  nativeInputProps: { ...register(`groups.${i}.enabled`) },
+                                },
+                              ]}
+                            />
+                          </GridCol>
+                        </Grid>
+                        <div className={styles.cardFooter}>
+                          {confirmDeleteGroup === i ? (
+                            <>
+                              <span className="fr-text--sm fr-mr-2w" style={{ alignSelf: "center" }}>
+                                Supprimer ce groupe ?
+                              </span>
+                              <Button
+                                priority="primary"
+                                size="small"
+                                className={styles.deleteBtn}
+                                onClick={() => removeGroupAt(i)}
+                              >
+                                Confirmer
+                              </Button>
+                              <Button
+                                priority="tertiary"
+                                size="small"
+                                className="fr-ml-1w"
+                                onClick={() => setConfirmDeleteGroup(null)}
+                              >
+                                Annuler
+                              </Button>
+                            </>
+                          ) : (
+                            <Button
+                              priority="tertiary no outline"
+                              size="small"
+                              className={styles.deleteBtn}
+                              iconId="fr-icon-delete-line"
+                              onClick={() => setConfirmDeleteGroup(i)}
+                            >
+                              Supprimer
+                            </Button>
+                          )}
+                        </div>
+                      </>
+                    )}
                   </div>
                 );
               })}
             </ClientAnimate>
           </section>
 
+          {/* Colonne Startups */}
           <section className={styles.col} aria-labelledby="col-startups-title">
             <div className={styles.colHeader}>
-              <h2 id="col-startups-title" className="fr-h4 fr-mb-0">
-                Startups
-              </h2>
-              <ButtonsGroup
-                inlineLayoutWhen="always"
-                buttons={[
-                  {
-                    children: "Ajouter une startup",
-                    onClick: () => startupsFA.append({ enabled: true, groups: [], id: "" }),
-                    priority: "secondary",
-                  },
-                ]}
-              />
+              <div className={styles.colHeaderTop}>
+                <h2 id="col-startups-title" className="fr-h4 fr-mb-0">
+                  Startups{" "}
+                  <Badge severity="info" small noIcon>
+                    {startupSearch ? `${filteredStartupCount}/${startupsFA.fields.length}` : startupsFA.fields.length}
+                  </Badge>
+                </h2>
+                <Button
+                  priority="secondary"
+                  size="small"
+                  onClick={() => startupsFA.append({ enabled: true, groups: [], id: "" })}
+                >
+                  + Ajouter
+                </Button>
+              </div>
               {startupsFA.fields.length > 3 && (
-                <Input
-                  iconId="fr-icon-search-line"
-                  label=""
-                  nativeInputProps={{
-                    onChange: e => setStartupSearch(e.target.value),
-                    placeholder: "Filtrer les startups...",
-                    value: startupSearch,
-                  }}
-                />
+                <div className={styles.colHeaderSearch}>
+                  <Input
+                    iconId="fr-icon-search-line"
+                    label=""
+                    nativeInputProps={{
+                      onChange: e => setStartupSearch(e.target.value),
+                      placeholder: "Filtrer...",
+                      value: startupSearch,
+                    }}
+                  />
+                </div>
               )}
             </div>
 
@@ -307,109 +428,163 @@ export const AdminConfigForm = ({ initialConfig }: Props) => {
                 ) {
                   return null;
                 }
+
+                const isExpanded = expandedStartups.has(s.id);
+                const displayName = sValues?.nameOverride || sValues?.id || "(nouvelle)";
+                const hasStatsUrl = !!sValues?.statsUrl;
+
                 return (
                   <div key={s.id} className={styles.card + " fr-background-alt--grey fr-radius-8"}>
-                    <Grid haveGutters>
-                      <GridCol base={12} sm={4}>
-                        <Input
-                          label="ID"
-                          nativeInputProps={{ ...register(`startups.${si}.id`) }}
-                          state={errors?.startups?.[si]?.id ? "error" : "default"}
-                          stateRelatedMessage={errors?.startups?.[si]?.id?.message}
-                        />
-                      </GridCol>
-                      <GridCol base={12} sm={4}>
-                        <Input
-                          label="Nom custom (nameOverride)"
-                          nativeInputProps={{ ...register(`startups.${si}.nameOverride`) }}
-                          state={errors?.startups?.[si]?.nameOverride ? "error" : "default"}
-                          stateRelatedMessage={errors?.startups?.[si]?.nameOverride?.message}
-                        />
-                      </GridCol>
-                      <GridCol base={12} sm={4}>
-                        <Checkbox
-                          options={[
-                            {
-                              label: "Activée",
-                              nativeInputProps: { ...register(`startups.${si}.enabled`) },
-                            },
-                          ]}
-                        />
-                      </GridCol>
-
-                      <GridCol base={12} sm={6}>
-                        <Input
-                          label="URL stats (statsUrl)"
-                          nativeInputProps={{
-                            ...register(`startups.${si}.statsUrl`, {
-                              setValueAs: (v: string) => v?.trim() || undefined,
-                            }),
-                            placeholder: "https://…",
-                            type: "url",
-                          }}
-                          state={errors?.startups?.[si]?.statsUrl ? "error" : "default"}
-                          stateRelatedMessage={errors?.startups?.[si]?.statsUrl?.message}
-                        />
-                      </GridCol>
-                      <GridCol base={12} sm={6}>
-                        <Input
-                          label="Site custom (websiteOverride)"
-                          nativeInputProps={{
-                            ...register(`startups.${si}.websiteOverride`, {
-                              setValueAs: (v: string) => v?.trim() || undefined,
-                            }),
-                            placeholder: "https://…",
-                            type: "url",
-                          }}
-                          state={errors?.startups?.[si]?.websiteOverride ? "error" : "default"}
-                          stateRelatedMessage={errors?.startups?.[si]?.websiteOverride?.message}
-                        />
-                      </GridCol>
-
-                      <GridCol base={12}>
-                        <Input
-                          label="North star custom (northStarOverride)"
-                          nativeInputProps={{ ...register(`startups.${si}.northStarOverride`) }}
-                          state={errors?.startups?.[si]?.northStarOverride ? "error" : "default"}
-                          stateRelatedMessage={errors?.startups?.[si]?.northStarOverride?.message}
-                        />
-                      </GridCol>
-
-                      <GridCol base={12}>
-                        <Controller
-                          control={control}
-                          name={`startups.${si}.groups`}
-                          render={({ field }) => (
-                            <GroupTagsEditor
-                              value={field.value ?? []}
-                              onChange={field.onChange}
-                              options={groupOptions}
-                            />
-                          )}
-                        />
-                        {errors?.startups?.[si]?.groups && (
-                          <p className="fr-error-text">{errors?.startups?.[si]?.groups?.message}</p>
+                    <div className={styles.cardSummary} onClick={() => toggleStartup(s.id)}>
+                      <div className={styles.cardSummaryLeft}>
+                        {sValues?.id && <span className={styles.cardId}>{sValues.id}</span>}
+                        <span className={styles.cardName}>{displayName}</span>
+                        {sValues?.enabled === false && (
+                          <Badge severity="warning" small noIcon>
+                            Desactivee
+                          </Badge>
                         )}
-                      </GridCol>
-                    </Grid>
-                    <div className="fr-mt-2w">
-                      <ButtonsGroup
-                        inlineLayoutWhen="always"
-                        buttons={[
-                          {
-                            children: "Supprimer",
-                            onClick: () => removeStartupAt(si),
-                            priority: "tertiary",
-                          },
-                        ]}
+                        {hasStatsUrl && (
+                          <Badge severity="success" small noIcon>
+                            Stats
+                          </Badge>
+                        )}
+                      </div>
+                      <Icon
+                        icon="fr-icon-arrow-down-s-line"
+                        size="lg"
+                        className={styles.cardChevron}
+                        data-open={isExpanded}
                       />
                     </div>
+
+                    {isExpanded && (
+                      <>
+                        <Grid haveGutters className="fr-mt-2w">
+                          <GridCol base={12} sm={6}>
+                            <Input
+                              label="ID"
+                              nativeInputProps={{ ...register(`startups.${si}.id`) }}
+                              state={errors?.startups?.[si]?.id ? "error" : "default"}
+                              stateRelatedMessage={errors?.startups?.[si]?.id?.message}
+                            />
+                          </GridCol>
+                          <GridCol base={12} sm={6}>
+                            <Input
+                              label="Nom"
+                              nativeInputProps={{ ...register(`startups.${si}.nameOverride`) }}
+                              state={errors?.startups?.[si]?.nameOverride ? "error" : "default"}
+                              stateRelatedMessage={errors?.startups?.[si]?.nameOverride?.message}
+                            />
+                          </GridCol>
+                          <GridCol base={12} sm={4}>
+                            <Checkbox
+                              options={[
+                                {
+                                  label: "Activee",
+                                  nativeInputProps: { ...register(`startups.${si}.enabled`) },
+                                },
+                              ]}
+                            />
+                          </GridCol>
+                          <GridCol base={12} sm={8}>
+                            <Input
+                              label="URL stats"
+                              nativeInputProps={{
+                                ...register(`startups.${si}.statsUrl`, {
+                                  setValueAs: (v: string) => v?.trim() || undefined,
+                                }),
+                                placeholder: "https://...",
+                                type: "url",
+                              }}
+                              state={errors?.startups?.[si]?.statsUrl ? "error" : "default"}
+                              stateRelatedMessage={errors?.startups?.[si]?.statsUrl?.message}
+                            />
+                          </GridCol>
+                          <GridCol base={12} sm={6}>
+                            <Input
+                              label="Site web"
+                              nativeInputProps={{
+                                ...register(`startups.${si}.websiteOverride`, {
+                                  setValueAs: (v: string) => v?.trim() || undefined,
+                                }),
+                                placeholder: "https://...",
+                                type: "url",
+                              }}
+                              state={errors?.startups?.[si]?.websiteOverride ? "error" : "default"}
+                              stateRelatedMessage={errors?.startups?.[si]?.websiteOverride?.message}
+                            />
+                          </GridCol>
+                          <GridCol base={12} sm={6}>
+                            <Input
+                              label="North star"
+                              nativeInputProps={{ ...register(`startups.${si}.northStarOverride`) }}
+                              state={errors?.startups?.[si]?.northStarOverride ? "error" : "default"}
+                              stateRelatedMessage={errors?.startups?.[si]?.northStarOverride?.message}
+                            />
+                          </GridCol>
+                          <GridCol base={12}>
+                            <Controller
+                              control={control}
+                              name={`startups.${si}.groups`}
+                              render={({ field }) => (
+                                <GroupTagsEditor
+                                  value={field.value ?? []}
+                                  onChange={field.onChange}
+                                  options={groupOptions}
+                                />
+                              )}
+                            />
+                            {errors?.startups?.[si]?.groups && (
+                              <p className="fr-error-text">{errors?.startups?.[si]?.groups?.message}</p>
+                            )}
+                          </GridCol>
+                        </Grid>
+                        <div className={styles.cardFooter}>
+                          {confirmDeleteStartup === si ? (
+                            <>
+                              <span className="fr-text--sm fr-mr-2w" style={{ alignSelf: "center" }}>
+                                Supprimer cette startup ?
+                              </span>
+                              <Button
+                                priority="primary"
+                                size="small"
+                                className={styles.deleteBtn}
+                                onClick={() => removeStartupAt(si)}
+                              >
+                                Confirmer
+                              </Button>
+                              <Button
+                                priority="tertiary"
+                                size="small"
+                                className="fr-ml-1w"
+                                onClick={() => setConfirmDeleteStartup(null)}
+                              >
+                                Annuler
+                              </Button>
+                            </>
+                          ) : (
+                            <Button
+                              priority="tertiary no outline"
+                              size="small"
+                              className={styles.deleteBtn}
+                              iconId="fr-icon-delete-line"
+                              onClick={() => setConfirmDeleteStartup(si)}
+                            >
+                              Supprimer
+                            </Button>
+                          )}
+                        </div>
+                      </>
+                    )}
                   </div>
                 );
               })}
             </ClientAnimate>
           </section>
         </div>
+
+        <ConfigHistory />
       </form>
     </FormProvider>
   );
