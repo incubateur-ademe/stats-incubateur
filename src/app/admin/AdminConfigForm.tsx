@@ -67,6 +67,14 @@ export const AdminConfigForm = ({ initialBetaNames = {}, initialConfig }: Props)
 
   // Noms beta.gouv.fr (id -> nom). Initialise cote serveur, enrichi par lazy check.
   const [betaNames, setBetaNames] = useState<Record<string, string>>(initialBetaNames);
+  const [betaNotFound, setBetaNotFound] = useState<Set<string>>(() => {
+    // Les IDs presentes dans la config mais absentes de initialBetaNames sont introuvables
+    const notFound = new Set<string>();
+    for (const s of initialConfig.startups) {
+      if (s.id && !(s.id in initialBetaNames)) notFound.add(s.id);
+    }
+    return notFound;
+  });
   const [checkingBeta, setCheckingBeta] = useState<string | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [expandedStartups, setExpandedStartups] = useState<Set<string>>(new Set());
@@ -140,14 +148,18 @@ export const AdminConfigForm = ({ initialBetaNames = {}, initialConfig }: Props)
     const res = await checkBetaStartup(startupId);
     if (res.ok && res.data) {
       setBetaNames(prev => ({ ...prev, [startupId]: res.data.name }));
+      setBetaNotFound(prev => {
+        const next = new Set(prev);
+        next.delete(startupId);
+        return next;
+      });
     } else if (!res.ok) {
-      // Supprimer le nom beta si la startup n'existe plus
       setBetaNames(prev => {
         const next = { ...prev };
         delete next[startupId];
         return next;
       });
-      setStatus({ text: res.error, type: "err" });
+      setBetaNotFound(prev => new Set([...prev, startupId]));
     }
     setCheckingBeta(null);
   };
@@ -473,6 +485,11 @@ export const AdminConfigForm = ({ initialBetaNames = {}, initialConfig }: Props)
                       <div className={styles.cardSummaryLeft} onClick={() => toggleStartup(s.id)}>
                         {sid && <span className={styles.cardId}>{sid}</span>}
                         <span className={styles.cardName}>{displayName}</span>
+                        {betaNotFound.has(sid) && (
+                          <Badge severity="error" small noIcon>
+                            Introuvable
+                          </Badge>
+                        )}
                         {hasStatsUrl && (
                           <Badge severity="success" small noIcon>
                             Stats
