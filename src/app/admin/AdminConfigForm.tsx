@@ -6,7 +6,7 @@ import Button from "@codegouvfr/react-dsfr/Button";
 import Input from "@codegouvfr/react-dsfr/Input";
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { startTransition, useEffect, useMemo, useRef, useState } from "react";
-import { Controller, FormProvider, useFieldArray, useForm } from "react-hook-form";
+import { Controller, FormProvider, useFieldArray, useForm, useWatch } from "react-hook-form";
 
 import { ClientAnimate } from "@/components/utils/ClientAnimate";
 import { Grid, GridCol, Icon } from "@/dsfr";
@@ -39,7 +39,6 @@ export const AdminConfigForm = ({ initialBetaNames = {}, initialConfig }: Props)
     reset,
     setValue,
     trigger,
-    watch,
   } = methods;
 
   useEffect(() => {
@@ -58,11 +57,8 @@ export const AdminConfigForm = ({ initialBetaNames = {}, initialConfig }: Props)
   const groupsFA = useFieldArray({ control, name: "groups" });
   const startupsFA = useFieldArray({ control, name: "startups" });
 
-  // eslint-disable-next-line react-hooks/incompatible-library -- no memo directive used
-  const watchedGroups = watch("groups");
-
-  // eslint-disable-next-line react-hooks/incompatible-library -- no memo directive used
-  const watchedStartups = watch("startups");
+  const watchedGroups = useWatch({ control, name: "groups" });
+  const watchedStartups = useWatch({ control, name: "startups" });
 
   const [status, setStatus] = useState<{ text: string; type: "err" | "ok" } | null>(null);
   const [groupSearch, setGroupSearch] = useState("");
