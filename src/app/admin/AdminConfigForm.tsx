@@ -3,7 +3,6 @@
 
 import Badge from "@codegouvfr/react-dsfr/Badge";
 import Button from "@codegouvfr/react-dsfr/Button";
-import Checkbox from "@codegouvfr/react-dsfr/Checkbox";
 import Input from "@codegouvfr/react-dsfr/Input";
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { startTransition, useEffect, useMemo, useState } from "react";
@@ -13,17 +12,18 @@ import { ClientAnimate } from "@/components/utils/ClientAnimate";
 import { Grid, GridCol, Icon } from "@/dsfr";
 import { type FullConfig, FullConfigSchema } from "@/startup-types";
 
-import { saveConfig } from "./action";
+import { checkBetaStartup, saveConfig } from "./action";
 import styles from "./AdminConfigForm.module.scss";
 import { ConfigHistory } from "./ConfigHistory";
 import { exportConfigToCsv, parseConfigFromCsv } from "./csv-utils";
 import { GroupTagsEditor } from "./GroupTagsEditor";
 
 interface Props {
+  initialBetaNames?: Record<string, string>;
   initialConfig: FullConfig;
 }
 
-export const AdminConfigForm = ({ initialConfig }: Props) => {
+export const AdminConfigForm = ({ initialBetaNames = {}, initialConfig }: Props) => {
   const methods = useForm<FullConfig>({
     defaultValues: initialConfig,
     mode: "onChange",
@@ -57,12 +57,17 @@ export const AdminConfigForm = ({ initialConfig }: Props) => {
 
   const groupsFA = useFieldArray({ control, name: "groups" });
   const startupsFA = useFieldArray({ control, name: "startups" });
+
   // eslint-disable-next-line react-hooks/incompatible-library -- no memo directive used
   const watchedGroups = watch("groups");
 
   const [status, setStatus] = useState<{ text: string; type: "err" | "ok" } | null>(null);
   const [groupSearch, setGroupSearch] = useState("");
   const [startupSearch, setStartupSearch] = useState("");
+
+  // Noms beta.gouv.fr (id -> nom). Initialise cote serveur, enrichi par lazy check.
+  const [betaNames, setBetaNames] = useState<Record<string, string>>(initialBetaNames);
+  const [checkingBeta, setCheckingBeta] = useState<string | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [expandedStartups, setExpandedStartups] = useState<Set<string>>(new Set());
   const [confirmDeleteGroup, setConfirmDeleteGroup] = useState<number | null>(null);
@@ -127,6 +132,24 @@ export const AdminConfigForm = ({ initialConfig }: Props) => {
   const removeStartupAt = (index: number) => {
     startupsFA.remove(index);
     setConfirmDeleteStartup(null);
+  };
+
+  const handleCheckBeta = async (startupId: string) => {
+    if (!startupId) return;
+    setCheckingBeta(startupId);
+    const res = await checkBetaStartup(startupId);
+    if (res.ok && res.data) {
+      setBetaNames(prev => ({ ...prev, [startupId]: res.data.name }));
+    } else if (!res.ok) {
+      // Supprimer le nom beta si la startup n'existe plus
+      setBetaNames(prev => {
+        const next = { ...prev };
+        delete next[startupId];
+        return next;
+      });
+      setStatus({ text: res.error, type: "err" });
+    }
+    setCheckingBeta(null);
   };
 
   const handleExportCsv = () => {
@@ -280,25 +303,40 @@ export const AdminConfigForm = ({ initialConfig }: Props) => {
 
                 const isExpanded = expandedGroups.has(g.id);
                 const displayName = gValues?.name || gValues?.id || "(nouveau)";
+                const isGroupEnabled = gValues?.enabled !== false;
 
                 return (
                   <div key={g.id} className={styles.card + " fr-background-alt--blue-france fr-radius-8"}>
-                    <div className={styles.cardSummary} onClick={() => toggleGroup(g.id)}>
-                      <div className={styles.cardSummaryLeft}>
+                    <div className={styles.cardSummary}>
+                      <div className={styles.cardSummaryLeft} onClick={() => toggleGroup(g.id)}>
                         {gValues?.id && <span className={styles.cardId}>{gValues.id}</span>}
                         <span className={styles.cardName}>{displayName}</span>
-                        {gValues?.enabled === false && (
-                          <Badge severity="warning" small noIcon>
-                            Desactive
-                          </Badge>
-                        )}
                       </div>
-                      <Icon
-                        icon="fr-icon-arrow-down-s-line"
-                        size="lg"
-                        className={styles.cardChevron}
-                        data-open={isExpanded}
-                      />
+                      <div className={styles.cardSummaryRight}>
+                        <Button
+                          priority="tertiary no outline"
+                          size="small"
+                          iconId={isGroupEnabled ? "fr-icon-eye-line" : "fr-icon-eye-off-line"}
+                          title={
+                            isGroupEnabled ? "Active - cliquer pour desactiver" : "Desactive - cliquer pour activer"
+                          }
+                          onClick={e => {
+                            e.stopPropagation();
+                            setValue(`groups.${i}.enabled`, !isGroupEnabled, {
+                              shouldDirty: true,
+                              shouldValidate: true,
+                            });
+                          }}
+                          style={isGroupEnabled ? undefined : { opacity: 0.4 }}
+                        />
+                        <Icon
+                          icon="fr-icon-arrow-down-s-line"
+                          size="lg"
+                          className={styles.cardChevron}
+                          data-open={isExpanded}
+                          onClick={() => toggleGroup(g.id)}
+                        />
+                      </div>
                     </div>
 
                     {isExpanded && (
@@ -320,23 +358,13 @@ export const AdminConfigForm = ({ initialConfig }: Props) => {
                               stateRelatedMessage={errors?.groups?.[i]?.name?.message}
                             />
                           </GridCol>
-                          <GridCol base={12} sm={9}>
+                          <GridCol base={12}>
                             <Input
                               label="Description"
                               textArea
                               nativeTextAreaProps={{ ...register(`groups.${i}.description`) }}
                               state={errors?.groups?.[i]?.description ? "error" : "default"}
                               stateRelatedMessage={errors?.groups?.[i]?.description?.message}
-                            />
-                          </GridCol>
-                          <GridCol base={12} sm={3}>
-                            <Checkbox
-                              options={[
-                                {
-                                  label: "Active",
-                                  nativeInputProps: { ...register(`groups.${i}.enabled`) },
-                                },
-                              ]}
                             />
                           </GridCol>
                         </Grid>
@@ -430,32 +458,50 @@ export const AdminConfigForm = ({ initialConfig }: Props) => {
                 }
 
                 const isExpanded = expandedStartups.has(s.id);
-                const displayName = sValues?.nameOverride || sValues?.id || "(nouvelle)";
+                const sid = sValues?.id ?? "";
+                const betaName = betaNames[sid];
+                const hasOverride = !!sValues?.nameOverride;
+                const displayName = hasOverride
+                  ? `${sValues.nameOverride} (surcharge)`
+                  : (betaName ?? sid) || "(nouvelle)";
                 const hasStatsUrl = !!sValues?.statsUrl;
+                const isEnabled = sValues?.enabled !== false;
 
                 return (
                   <div key={s.id} className={styles.card + " fr-background-alt--grey fr-radius-8"}>
-                    <div className={styles.cardSummary} onClick={() => toggleStartup(s.id)}>
-                      <div className={styles.cardSummaryLeft}>
-                        {sValues?.id && <span className={styles.cardId}>{sValues.id}</span>}
+                    <div className={styles.cardSummary}>
+                      <div className={styles.cardSummaryLeft} onClick={() => toggleStartup(s.id)}>
+                        {sid && <span className={styles.cardId}>{sid}</span>}
                         <span className={styles.cardName}>{displayName}</span>
-                        {sValues?.enabled === false && (
-                          <Badge severity="warning" small noIcon>
-                            Desactivee
-                          </Badge>
-                        )}
                         {hasStatsUrl && (
                           <Badge severity="success" small noIcon>
                             Stats
                           </Badge>
                         )}
                       </div>
-                      <Icon
-                        icon="fr-icon-arrow-down-s-line"
-                        size="lg"
-                        className={styles.cardChevron}
-                        data-open={isExpanded}
-                      />
+                      <div className={styles.cardSummaryRight}>
+                        <Button
+                          priority="tertiary no outline"
+                          size="small"
+                          iconId={isEnabled ? "fr-icon-eye-line" : "fr-icon-eye-off-line"}
+                          title={isEnabled ? "Active - cliquer pour desactiver" : "Desactivee - cliquer pour activer"}
+                          onClick={e => {
+                            e.stopPropagation();
+                            setValue(`startups.${si}.enabled`, !isEnabled, {
+                              shouldDirty: true,
+                              shouldValidate: true,
+                            });
+                          }}
+                          style={isEnabled ? undefined : { opacity: 0.4 }}
+                        />
+                        <Icon
+                          icon="fr-icon-arrow-down-s-line"
+                          size="lg"
+                          className={styles.cardChevron}
+                          data-open={isExpanded}
+                          onClick={() => toggleStartup(s.id)}
+                        />
+                      </div>
                     </div>
 
                     {isExpanded && (
@@ -478,14 +524,21 @@ export const AdminConfigForm = ({ initialConfig }: Props) => {
                             />
                           </GridCol>
                           <GridCol base={12} sm={4}>
-                            <Checkbox
-                              options={[
-                                {
-                                  label: "Activee",
-                                  nativeInputProps: { ...register(`startups.${si}.enabled`) },
-                                },
-                              ]}
-                            />
+                            {betaName ? (
+                              <div className="fr-text--sm fr-text-mention--grey">
+                                Nom beta.gouv.fr : <strong>{betaName}</strong>
+                              </div>
+                            ) : sid ? (
+                              <Button
+                                priority="tertiary"
+                                size="small"
+                                iconId="fr-icon-search-line"
+                                disabled={checkingBeta === sid}
+                                onClick={() => void handleCheckBeta(sid)}
+                              >
+                                {checkingBeta === sid ? "Verification..." : "Verifier sur beta.gouv.fr"}
+                              </Button>
+                            ) : null}
                           </GridCol>
                           <GridCol base={12} sm={8}>
                             <Input

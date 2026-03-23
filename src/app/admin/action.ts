@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import z from "zod";
 
 import { gistConfigClient } from "@/lib/db/gist/client";
+import { fetchBetaStartup } from "@/lib/fetchBetaStartup";
 import { type FullConfig, FullConfigSchema } from "@/startup-types";
 import { type ServerActionResponse } from "@/utils/next";
 
@@ -84,6 +85,14 @@ export const getConfigHistory = async (page = 1): Promise<ServerActionResponse<G
   } catch (error) {
     return { error: parseOctokitError(error), ok: false };
   }
+};
+
+/** Verifie si une startup existe sur beta.gouv.fr et retourne son nom. */
+export const checkBetaStartup = async (id: string): Promise<ServerActionResponse<{ name: string }>> => {
+  if (!id) return { error: "ID vide.", ok: false };
+  const startup = await fetchBetaStartup(id);
+  if (!startup) return { error: `Startup "${id}" introuvable sur beta.gouv.fr.`, ok: false };
+  return { data: { name: startup.name }, ok: true };
 };
 
 export const restoreConfigRevision = async (sha: string): Promise<ServerActionResponse<void>> => {
