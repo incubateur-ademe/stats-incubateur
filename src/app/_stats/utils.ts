@@ -7,8 +7,9 @@ import { type StartupConfig } from "@/startup-types";
 import { type EnrichedStartup } from "./types";
 
 export const orderAndEnrichStartups = async (startups: StartupConfig[]): Promise<EnrichedStartup[]> => {
+  const enabledStartups = startups.filter(s => s.enabled !== false);
   const results = await Promise.allSettled(
-    startups.map(async s => {
+    enabledStartups.map(async s => {
       const betaStartup = await fetchBetaStartup(s.id);
       return {
         ...s,

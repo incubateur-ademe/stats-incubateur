@@ -89,7 +89,7 @@ export const getConfigHistory = async (page = 1): Promise<ServerActionResponse<G
 
 /** Verifie si une startup existe sur beta.gouv.fr et retourne son nom. */
 export const checkBetaStartup = async (id: string): Promise<ServerActionResponse<{ name: string }>> => {
-  if (!id) return { error: "ID vide.", ok: false };
+  if (!id || id.length > 128 || !/^[a-z0-9-._]+$/.test(id)) return { error: "ID invalide.", ok: false };
   const startup = await fetchBetaStartup(id);
   if (!startup) return { error: `Startup "${id}" introuvable sur beta.gouv.fr.`, ok: false };
   return { data: { name: startup.name }, ok: true };

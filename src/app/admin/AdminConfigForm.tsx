@@ -5,7 +5,7 @@ import Badge from "@codegouvfr/react-dsfr/Badge";
 import Button from "@codegouvfr/react-dsfr/Button";
 import Input from "@codegouvfr/react-dsfr/Input";
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
-import { startTransition, useEffect, useMemo, useState } from "react";
+import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, FormProvider, useFieldArray, useForm } from "react-hook-form";
 
 import { ClientAnimate } from "@/components/utils/ClientAnimate";
@@ -61,6 +61,9 @@ export const AdminConfigForm = ({ initialBetaNames = {}, initialConfig }: Props)
   // eslint-disable-next-line react-hooks/incompatible-library -- no memo directive used
   const watchedGroups = watch("groups");
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- no memo directive used
+  const watchedStartups = watch("startups");
+
   const [status, setStatus] = useState<{ text: string; type: "err" | "ok" } | null>(null);
   const [groupSearch, setGroupSearch] = useState("");
   const [startupSearch, setStartupSearch] = useState("");
@@ -68,7 +71,6 @@ export const AdminConfigForm = ({ initialBetaNames = {}, initialConfig }: Props)
   // Noms beta.gouv.fr (id -> nom). Initialise cote serveur, enrichi par lazy check.
   const [betaNames, setBetaNames] = useState<Record<string, string>>(initialBetaNames);
   const [betaNotFound, setBetaNotFound] = useState<Set<string>>(() => {
-    // Les IDs presentes dans la config mais absentes de initialBetaNames sont introuvables
     const notFound = new Set<string>();
     for (const s of initialConfig.startups) {
       if (s.id && !(s.id in initialBetaNames)) notFound.add(s.id);
@@ -76,6 +78,33 @@ export const AdminConfigForm = ({ initialBetaNames = {}, initialConfig }: Props)
     return notFound;
   });
   const [checkingBeta, setCheckingBeta] = useState<string | null>(null);
+
+  // Nettoyer betaNames/betaNotFound quand un id de startup change
+  const prevStartupIds = useRef<string[]>(initialConfig.startups.map(s => s.id));
+  useEffect(() => {
+    const currentIds = watchedStartups.map(s => s?.id ?? "");
+    const prev = prevStartupIds.current;
+
+    // Pour chaque position, si l'id a change, supprimer l'ancien des caches
+    for (let i = 0; i < Math.max(prev.length, currentIds.length); i++) {
+      const oldId = prev[i];
+      const newId = currentIds[i];
+      if (oldId && oldId !== newId) {
+        setBetaNames(p => {
+          const next = { ...p };
+          delete next[oldId];
+          return next;
+        });
+        setBetaNotFound(p => {
+          const next = new Set(p);
+          next.delete(oldId);
+          return next;
+        });
+      }
+    }
+
+    prevStartupIds.current = currentIds;
+  }, [watchedStartups]);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [expandedStartups, setExpandedStartups] = useState<Set<string>>(new Set());
   const [confirmDeleteGroup, setConfirmDeleteGroup] = useState<number | null>(null);
@@ -485,7 +514,7 @@ export const AdminConfigForm = ({ initialBetaNames = {}, initialConfig }: Props)
                       <div className={styles.cardSummaryLeft} onClick={() => toggleStartup(s.id)}>
                         {sid && <span className={styles.cardId}>{sid}</span>}
                         <span className={styles.cardName}>{displayName}</span>
-                        {betaNotFound.has(sid) && (
+                        {sid && betaNotFound.has(sid) && (
                           <Badge severity="error" small noIcon>
                             Introuvable
                           </Badge>
