@@ -4,12 +4,8 @@
 import ButtonsGroup from "@codegouvfr/react-dsfr/ButtonsGroup";
 import Checkbox from "@codegouvfr/react-dsfr/Checkbox";
 import Input from "@codegouvfr/react-dsfr/Input";
-import { type TagProps } from "@codegouvfr/react-dsfr/Tag";
-import TagsGroup from "@codegouvfr/react-dsfr/TagsGroup";
-import { cx } from "@codegouvfr/react-dsfr/tools/cx";
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
-import Autocomplete from "@mui/material/Autocomplete";
-import { startTransition, useMemo, useState } from "react";
+import { startTransition, useEffect, useMemo, useState } from "react";
 import { Controller, FormProvider, useFieldArray, useForm } from "react-hook-form";
 
 import { ClientAnimate } from "@/components/utils/ClientAnimate";
@@ -18,105 +14,12 @@ import { type FullConfig, FullConfigSchema } from "@/startup-types";
 
 import { saveConfig } from "./action";
 import styles from "./AdminConfigForm.module.scss";
+import { ConfigHistory } from "./ConfigHistory";
+import { exportConfigToCsv, parseConfigFromCsv } from "./csv-utils";
+import { GroupTagsEditor } from "./GroupTagsEditor";
 
 interface Props {
   initialConfig: FullConfig;
-}
-
-interface GroupTagsEditorProps {
-  label?: string;
-  onChange: (ids: string[]) => void;
-  options: Array<{ id: string; label: string }>;
-  value: string[];
-}
-
-function GroupTagsEditor({ label = "Ajouter un groupe", onChange, options, value }: GroupTagsEditorProps) {
-  const [query, setQuery] = useState("");
-  const byId = useMemo(() => new Map(options.map(o => [o.id, o.label])), [options]);
-
-  const available = useMemo(
-    () =>
-      options.filter(
-        o =>
-          !value.includes(o.id) &&
-          (o.id.toLowerCase().includes(query.toLowerCase()) ||
-            (o.label ?? "").toLowerCase().includes(query.toLowerCase())),
-      ),
-    [options, value, query],
-  );
-
-  const addMany = (ids: string[]) => {
-    if (!ids.length) return;
-    const next = [...new Set([...value, ...ids.filter(id => byId.has(id))])];
-    if (next.length !== value.length) onChange(next);
-    setQuery("");
-  };
-
-  const addOne = (gid: string | null) => {
-    if (!gid) return;
-    if (!byId.has(gid) || value.includes(gid)) return;
-    onChange([...value, gid]);
-    setQuery("");
-  };
-
-  const remove = (gid: string) => onChange(value.filter(v => v !== gid));
-
-  return (
-    <div>
-      <div className="fr-mb-1w">
-        {value.length === 0 ? (
-          <span className="fr-text-mention--grey">Aucun groupe</span>
-        ) : (
-          <TagsGroup
-            smallTags
-            tags={
-              value.map<TagProps>(gid => ({
-                children: byId.get(gid) ?? gid,
-                dismissible: true,
-                nativeButtonProps: { onClick: () => remove(gid), title: "Retirer ce groupe" },
-              })) as [TagProps, ...TagProps[]]
-            }
-          />
-        )}
-      </div>
-
-      <Autocomplete
-        multiple
-        disableCloseOnSelect
-        disablePortal
-        autoHighlight
-        options={available}
-        getOptionLabel={o => `${o.id}`}
-        isOptionEqualToValue={(a, b) => a.id === b.id}
-        value={[]}
-        inputValue={query}
-        onInputChange={(_, v) => setQuery(v ?? "")}
-        onChange={(_, newValue) => addMany(newValue.map(o => o.id))}
-        filterSelectedOptions
-        slotProps={{ listbox: { style: { maxHeight: 240 } } }}
-        renderInput={params => (
-          <div ref={params.InputProps.ref}>
-            <Input
-              iconId="fr-icon-search-line"
-              label={label}
-              className={cx(params.inputProps.className)}
-              nativeInputProps={{
-                ...params.inputProps,
-                onKeyDown: e => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    const first = available[0];
-                    if (first) addOne(first.id);
-                  }
-                },
-                placeholder: params.inputProps.placeholder ?? "Rechercher un groupe…",
-              }}
-            />
-          </div>
-        )}
-      />
-    </div>
-  );
 }
 
 export const AdminConfigForm = ({ initialConfig }: Props) => {
@@ -128,14 +31,20 @@ export const AdminConfigForm = ({ initialConfig }: Props) => {
 
   const {
     control,
-    formState: { errors, isDirty, isValid },
+    formState: { errors, isDirty, isSubmitting, isValid },
     getValues,
     handleSubmit,
     register,
     reset,
     setValue,
+    trigger,
     watch,
   } = methods;
+
+  // Valider au montage pour afficher les erreurs de la config initiale
+  useEffect(() => {
+    void trigger();
+  }, [trigger]);
 
   const groupsFA = useFieldArray({ control, name: "groups" });
   const startupsFA = useFieldArray({ control, name: "startups" });
@@ -143,6 +52,8 @@ export const AdminConfigForm = ({ initialConfig }: Props) => {
   const watchedGroups = watch("groups");
 
   const [status, setStatus] = useState<{ text: string; type: "err" | "ok" } | null>(null);
+  const [groupSearch, setGroupSearch] = useState("");
+  const [startupSearch, setStartupSearch] = useState("");
 
   const onSubmit = handleSubmit(async data => {
     setStatus(null);
@@ -180,6 +91,34 @@ export const AdminConfigForm = ({ initialConfig }: Props) => {
     startupsFA.remove(index);
   };
 
+  const handleExportCsv = () => {
+    const csv = exportConfigToCsv(getValues());
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "config-startups.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportCsv = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = parseConfigFromCsv(reader.result as string);
+        reset(parsed, { keepDirty: false });
+        setStatus({ text: "CSV importe avec succes. Verifiez et enregistrez.", type: "ok" });
+      } catch {
+        setStatus({ text: "Erreur lors du parsing du fichier CSV.", type: "err" });
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  };
+
   const groupOptions = useMemo(
     () =>
       watchedGroups
@@ -199,8 +138,18 @@ export const AdminConfigForm = ({ initialConfig }: Props) => {
             alignment="right"
             inlineLayoutWhen="always"
             buttons={[
-              { children: "Réinitialiser", onClick: () => reset(initialConfig), priority: "secondary" },
-              { children: "Enregistrer", disabled: !isDirty || !isValid, priority: "primary", type: "submit" },
+              {
+                children: "Reinitialiser",
+                disabled: isSubmitting,
+                onClick: () => reset(initialConfig),
+                priority: "secondary",
+              },
+              {
+                children: isSubmitting ? "Sauvegarde en cours..." : "Enregistrer",
+                disabled: !isDirty || !isValid || isSubmitting,
+                priority: "primary",
+                type: "submit",
+              },
             ]}
           />
           {status && (
@@ -208,6 +157,16 @@ export const AdminConfigForm = ({ initialConfig }: Props) => {
               <p>{status.text}</p>
             </div>
           )}
+          <div className="fr-mt-1w" style={{ display: "flex", gap: "0.5rem" }}>
+            <button type="button" className="fr-btn fr-btn--tertiary fr-btn--sm" onClick={handleExportCsv}>
+              Exporter CSV
+            </button>
+            <label className="fr-btn fr-btn--tertiary fr-btn--sm" style={{ cursor: "pointer" }}>
+              Importer CSV
+              <input type="file" accept=".csv" onChange={handleImportCsv} style={{ display: "none" }} />
+            </label>
+          </div>
+          <ConfigHistory />
         </div>
 
         <div className={styles.columns}>
@@ -226,64 +185,85 @@ export const AdminConfigForm = ({ initialConfig }: Props) => {
                   },
                 ]}
               />
+              {groupsFA.fields.length > 3 && (
+                <Input
+                  iconId="fr-icon-search-line"
+                  label=""
+                  nativeInputProps={{
+                    onChange: e => setGroupSearch(e.target.value),
+                    placeholder: "Filtrer les groupes...",
+                    value: groupSearch,
+                  }}
+                />
+              )}
             </div>
 
             <ClientAnimate className={styles.scroll}>
               {groupsFA.fields.length === 0 && <p className="fr-text-mention--grey">Aucun groupe.</p>}
 
-              {groupsFA.fields.map((g, i) => (
-                <div key={g.id} className={styles.card + " fr-background-alt--blue-france fr-radius-8"}>
-                  <Grid haveGutters>
-                    <GridCol base={12} sm={6}>
-                      <Input
-                        label="ID"
-                        nativeInputProps={{ ...register(`groups.${i}.id`) }}
-                        state={errors?.groups?.[i]?.id ? "error" : "default"}
-                        stateRelatedMessage={errors?.groups?.[i]?.id?.message}
-                      />
-                    </GridCol>
-                    <GridCol base={12} sm={6}>
-                      <Input
-                        label="Nom"
-                        nativeInputProps={{ ...register(`groups.${i}.name`) }}
-                        state={errors?.groups?.[i]?.name ? "error" : "default"}
-                        stateRelatedMessage={errors?.groups?.[i]?.name?.message}
-                      />
-                    </GridCol>
-                    <GridCol base={12} sm={9}>
-                      <Input
-                        label="Description (optionnelle)"
-                        textArea
-                        nativeTextAreaProps={{ ...register(`groups.${i}.description`) }}
-                        state={errors?.groups?.[i]?.description ? "error" : "default"}
-                        stateRelatedMessage={errors?.groups?.[i]?.description?.message}
-                      />
-                    </GridCol>
-                    <GridCol base={12} sm={3}>
-                      <Checkbox
-                        options={[
+              {groupsFA.fields.map((g, i) => {
+                const gValues = watchedGroups[i];
+                if (
+                  groupSearch &&
+                  !(gValues?.id ?? "").toLowerCase().includes(groupSearch.toLowerCase()) &&
+                  !(gValues?.name ?? "").toLowerCase().includes(groupSearch.toLowerCase())
+                ) {
+                  return null;
+                }
+                return (
+                  <div key={g.id} className={styles.card + " fr-background-alt--blue-france fr-radius-8"}>
+                    <Grid haveGutters>
+                      <GridCol base={12} sm={6}>
+                        <Input
+                          label="ID"
+                          nativeInputProps={{ ...register(`groups.${i}.id`) }}
+                          state={errors?.groups?.[i]?.id ? "error" : "default"}
+                          stateRelatedMessage={errors?.groups?.[i]?.id?.message}
+                        />
+                      </GridCol>
+                      <GridCol base={12} sm={6}>
+                        <Input
+                          label="Nom"
+                          nativeInputProps={{ ...register(`groups.${i}.name`) }}
+                          state={errors?.groups?.[i]?.name ? "error" : "default"}
+                          stateRelatedMessage={errors?.groups?.[i]?.name?.message}
+                        />
+                      </GridCol>
+                      <GridCol base={12} sm={9}>
+                        <Input
+                          label="Description (optionnelle)"
+                          textArea
+                          nativeTextAreaProps={{ ...register(`groups.${i}.description`) }}
+                          state={errors?.groups?.[i]?.description ? "error" : "default"}
+                          stateRelatedMessage={errors?.groups?.[i]?.description?.message}
+                        />
+                      </GridCol>
+                      <GridCol base={12} sm={3}>
+                        <Checkbox
+                          options={[
+                            {
+                              label: "Activé",
+                              nativeInputProps: { ...register(`groups.${i}.enabled`) },
+                            },
+                          ]}
+                        />
+                      </GridCol>
+                    </Grid>
+                    <div className="fr-mt-2w">
+                      <ButtonsGroup
+                        inlineLayoutWhen="always"
+                        buttons={[
                           {
-                            label: "Activé",
-                            nativeInputProps: { ...register(`groups.${i}.enabled`) },
+                            children: "Supprimer",
+                            onClick: () => removeGroupAt(i),
+                            priority: "tertiary",
                           },
                         ]}
                       />
-                    </GridCol>
-                  </Grid>
-                  <div className="fr-mt-2w">
-                    <ButtonsGroup
-                      inlineLayoutWhen="always"
-                      buttons={[
-                        {
-                          children: "Supprimer",
-                          onClick: () => removeGroupAt(i),
-                          priority: "tertiary",
-                        },
-                      ]}
-                    />
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </ClientAnimate>
           </section>
 
@@ -302,106 +282,131 @@ export const AdminConfigForm = ({ initialConfig }: Props) => {
                   },
                 ]}
               />
+              {startupsFA.fields.length > 3 && (
+                <Input
+                  iconId="fr-icon-search-line"
+                  label=""
+                  nativeInputProps={{
+                    onChange: e => setStartupSearch(e.target.value),
+                    placeholder: "Filtrer les startups...",
+                    value: startupSearch,
+                  }}
+                />
+              )}
             </div>
 
             <ClientAnimate className={styles.scroll}>
               {startupsFA.fields.length === 0 && <p className="fr-text-mention--grey">Aucune startup.</p>}
 
-              {startupsFA.fields.map((s, si) => (
-                <div key={s.id} className={styles.card + " fr-background-alt--grey fr-radius-8"}>
-                  <Grid haveGutters>
-                    <GridCol base={12} sm={4}>
-                      <Input
-                        label="ID"
-                        nativeInputProps={{ ...register(`startups.${si}.id`) }}
-                        state={errors?.startups?.[si]?.id ? "error" : "default"}
-                        stateRelatedMessage={errors?.startups?.[si]?.id?.message}
-                      />
-                    </GridCol>
-                    <GridCol base={12} sm={4}>
-                      <Input
-                        label="Nom custom (nameOverride)"
-                        nativeInputProps={{ ...register(`startups.${si}.nameOverride`) }}
-                        state={errors?.startups?.[si]?.nameOverride ? "error" : "default"}
-                        stateRelatedMessage={errors?.startups?.[si]?.nameOverride?.message}
-                      />
-                    </GridCol>
-                    <GridCol base={12} sm={4}>
-                      <Checkbox
-                        options={[
+              {startupsFA.fields.map((s, si) => {
+                const sValues = getValues(`startups.${si}`);
+                if (
+                  startupSearch &&
+                  !(sValues?.id ?? "").toLowerCase().includes(startupSearch.toLowerCase()) &&
+                  !(sValues?.nameOverride ?? "").toLowerCase().includes(startupSearch.toLowerCase())
+                ) {
+                  return null;
+                }
+                return (
+                  <div key={s.id} className={styles.card + " fr-background-alt--grey fr-radius-8"}>
+                    <Grid haveGutters>
+                      <GridCol base={12} sm={4}>
+                        <Input
+                          label="ID"
+                          nativeInputProps={{ ...register(`startups.${si}.id`) }}
+                          state={errors?.startups?.[si]?.id ? "error" : "default"}
+                          stateRelatedMessage={errors?.startups?.[si]?.id?.message}
+                        />
+                      </GridCol>
+                      <GridCol base={12} sm={4}>
+                        <Input
+                          label="Nom custom (nameOverride)"
+                          nativeInputProps={{ ...register(`startups.${si}.nameOverride`) }}
+                          state={errors?.startups?.[si]?.nameOverride ? "error" : "default"}
+                          stateRelatedMessage={errors?.startups?.[si]?.nameOverride?.message}
+                        />
+                      </GridCol>
+                      <GridCol base={12} sm={4}>
+                        <Checkbox
+                          options={[
+                            {
+                              label: "Activée",
+                              nativeInputProps: { ...register(`startups.${si}.enabled`) },
+                            },
+                          ]}
+                        />
+                      </GridCol>
+
+                      <GridCol base={12} sm={6}>
+                        <Input
+                          label="URL stats (statsUrl)"
+                          nativeInputProps={{
+                            ...register(`startups.${si}.statsUrl`, {
+                              setValueAs: (v: string) => v?.trim() || undefined,
+                            }),
+                            placeholder: "https://…",
+                            type: "url",
+                          }}
+                          state={errors?.startups?.[si]?.statsUrl ? "error" : "default"}
+                          stateRelatedMessage={errors?.startups?.[si]?.statsUrl?.message}
+                        />
+                      </GridCol>
+                      <GridCol base={12} sm={6}>
+                        <Input
+                          label="Site custom (websiteOverride)"
+                          nativeInputProps={{
+                            ...register(`startups.${si}.websiteOverride`, {
+                              setValueAs: (v: string) => v?.trim() || undefined,
+                            }),
+                            placeholder: "https://…",
+                            type: "url",
+                          }}
+                          state={errors?.startups?.[si]?.websiteOverride ? "error" : "default"}
+                          stateRelatedMessage={errors?.startups?.[si]?.websiteOverride?.message}
+                        />
+                      </GridCol>
+
+                      <GridCol base={12}>
+                        <Input
+                          label="North star custom (northStarOverride)"
+                          nativeInputProps={{ ...register(`startups.${si}.northStarOverride`) }}
+                          state={errors?.startups?.[si]?.northStarOverride ? "error" : "default"}
+                          stateRelatedMessage={errors?.startups?.[si]?.northStarOverride?.message}
+                        />
+                      </GridCol>
+
+                      <GridCol base={12}>
+                        <Controller
+                          control={control}
+                          name={`startups.${si}.groups`}
+                          render={({ field }) => (
+                            <GroupTagsEditor
+                              value={field.value ?? []}
+                              onChange={field.onChange}
+                              options={groupOptions}
+                            />
+                          )}
+                        />
+                        {errors?.startups?.[si]?.groups && (
+                          <p className="fr-error-text">{errors?.startups?.[si]?.groups?.message}</p>
+                        )}
+                      </GridCol>
+                    </Grid>
+                    <div className="fr-mt-2w">
+                      <ButtonsGroup
+                        inlineLayoutWhen="always"
+                        buttons={[
                           {
-                            label: "Activée",
-                            nativeInputProps: { ...register(`startups.${si}.enabled`) },
+                            children: "Supprimer",
+                            onClick: () => removeStartupAt(si),
+                            priority: "tertiary",
                           },
                         ]}
                       />
-                    </GridCol>
-
-                    <GridCol base={12} sm={6}>
-                      <Input
-                        label="URL stats (statsUrl)"
-                        nativeInputProps={{
-                          ...register(`startups.${si}.statsUrl`, {
-                            setValueAs: (v: string) => v?.trim() || undefined,
-                          }),
-                          placeholder: "https://…",
-                          type: "url",
-                        }}
-                        state={errors?.startups?.[si]?.statsUrl ? "error" : "default"}
-                        stateRelatedMessage={errors?.startups?.[si]?.statsUrl?.message}
-                      />
-                    </GridCol>
-                    <GridCol base={12} sm={6}>
-                      <Input
-                        label="Site custom (websiteOverride)"
-                        nativeInputProps={{
-                          ...register(`startups.${si}.websiteOverride`, {
-                            setValueAs: (v: string) => v?.trim() || undefined,
-                          }),
-                          placeholder: "https://…",
-                          type: "url",
-                        }}
-                        state={errors?.startups?.[si]?.websiteOverride ? "error" : "default"}
-                        stateRelatedMessage={errors?.startups?.[si]?.websiteOverride?.message}
-                      />
-                    </GridCol>
-
-                    <GridCol base={12}>
-                      <Input
-                        label="North star custom (northStarOverride)"
-                        nativeInputProps={{ ...register(`startups.${si}.northStarOverride`) }}
-                        state={errors?.startups?.[si]?.northStarOverride ? "error" : "default"}
-                        stateRelatedMessage={errors?.startups?.[si]?.northStarOverride?.message}
-                      />
-                    </GridCol>
-
-                    <GridCol base={12}>
-                      <Controller
-                        control={control}
-                        name={`startups.${si}.groups`}
-                        render={({ field }) => (
-                          <GroupTagsEditor value={field.value ?? []} onChange={field.onChange} options={groupOptions} />
-                        )}
-                      />
-                      {errors?.startups?.[si]?.groups && (
-                        <p className="fr-error-text">{errors?.startups?.[si]?.groups?.message}</p>
-                      )}
-                    </GridCol>
-                  </Grid>
-                  <div className="fr-mt-2w">
-                    <ButtonsGroup
-                      inlineLayoutWhen="always"
-                      buttons={[
-                        {
-                          children: "Supprimer",
-                          onClick: () => removeStartupAt(si),
-                          priority: "tertiary",
-                        },
-                      ]}
-                    />
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </ClientAnimate>
           </section>
         </div>

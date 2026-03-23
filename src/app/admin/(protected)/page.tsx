@@ -2,7 +2,7 @@ import { Container } from "@/dsfr";
 import { DsfrPage } from "@/dsfr/layout/DsfrPage";
 import { gistConfigClient } from "@/lib/db/gist/client";
 
-import { AdminConfigForm } from "./AdminConfigForm";
+import { AdminConfigForm } from "../AdminConfigForm";
 
 const AdminPage = async () => {
   const gistConfig = await gistConfigClient.getConfig();

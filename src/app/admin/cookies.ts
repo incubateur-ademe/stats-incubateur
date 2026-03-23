@@ -1,13 +1,15 @@
 import { type RequestCookies, type ResponseCookies } from "next/dist/compiled/@edge-runtime/cookies";
 import { type ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
 
-const COOKIE_NAME = "stats-incubateur-admin-auth";
-const COOKIE_MAX_AGE = 1000 * 60 * 60; // 1 hour
+export const COOKIE_NAME = "stats-incubateur-admin-auth";
+export const COOKIE_MAX_AGE = 1000 * 60 * 60; // 1 hour
 
 export const setAuthCookie = (cookies: ResponseCookies) => {
   cookies.set({
     httpOnly: true,
+    maxAge: COOKIE_MAX_AGE / 1000,
     name: COOKIE_NAME,
+    sameSite: "strict",
     secure: process.env.NODE_ENV === "production",
     value: `${Date.now() + COOKIE_MAX_AGE}`,
   });
