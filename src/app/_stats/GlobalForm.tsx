@@ -1,13 +1,16 @@
 "use client";
 
+import { fr } from "@codegouvfr/react-dsfr";
 import Select from "@codegouvfr/react-dsfr/Select";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import z from "zod";
 
-import { Grid, GridCol } from "@/dsfr";
+import { ClientAnimate } from "@/components/utils/ClientAnimate";
+import { GridCol } from "@/dsfr";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 
 import styles from "./GlobalForm.module.scss";
@@ -57,6 +60,8 @@ interface GlobalFormProps {
 }
 
 export const GlobalForm = ({ startups }: GlobalFormProps) => {
+  const queryClient = useQueryClient();
+
   const methods = useForm<FormType>({
     defaultValues: { periodicity: DEFAULT_PERIODICITY, since: undefined },
     mode: "onChange",
@@ -78,6 +83,34 @@ export const GlobalForm = ({ startups }: GlobalFormProps) => {
   const debouncedInput = useDebouncedValue<StatInput>({ periodicity: watchedPeriodicity, since: watchedSince }, 300);
 
   const gridBase = useMemo(() => (["year", "month"].includes(watchedPeriodicity) ? 6 : 12), [watchedPeriodicity]);
+
+  // Compteur pour forcer le re-tri quand une query se termine
+  const [settledCount, setSettledCount] = useState(0);
+
+  // Tri dynamique : les cards avec données en cache passent en premier
+  const sortedStartups = useMemo(() => {
+    const hasData = (s: EnrichedStartup) => {
+      const data = queryClient.getQueryData<{ stats?: unknown[] }>([
+        "stats",
+        s.id,
+        debouncedInput.periodicity,
+        debouncedInput.since ?? null,
+      ]);
+      return !!data?.stats?.length;
+    };
+
+    return [...startups].sort((a, b) => {
+      const aHasData = hasData(a);
+      const bHasData = hasData(b);
+      if (aHasData && !bHasData) return -1;
+      if (!aHasData && bHasData) return 1;
+      return 0; // Conserver l'ordre serveur (statsUrl first, puis alpha) comme secondaire
+    });
+    // settledCount force le recalcul quand une query se termine
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startups, debouncedInput, queryClient, settledCount]);
+
+  const onQuerySettled = useCallback(() => setSettledCount(c => c + 1), []);
 
   const router = useRouter();
   const pathname = usePathname();
@@ -180,13 +213,13 @@ export const GlobalForm = ({ startups }: GlobalFormProps) => {
         </form>
       </FormProvider>
 
-      <Grid haveGutters>
-        {startups.map(s => (
+      <ClientAnimate className={fr.cx("fr-grid-row", "fr-grid-row--gutters")}>
+        {sortedStartups.map(s => (
           <GridCol base={gridBase} key={s.id} className={styles["startup-card"]}>
-            <StartupCard startup={s} input={debouncedInput} />
+            <StartupCard startup={s} input={debouncedInput} onQuerySettled={onQuerySettled} />
           </GridCol>
         ))}
-      </Grid>
+      </ClientAnimate>
     </>
   );
 };

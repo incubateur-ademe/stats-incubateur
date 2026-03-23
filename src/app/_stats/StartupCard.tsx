@@ -1,4 +1,5 @@
 import { fr } from "@codegouvfr/react-dsfr";
+import Accordion from "@codegouvfr/react-dsfr/Accordion";
 import { type ButtonProps } from "@codegouvfr/react-dsfr/Button";
 import ButtonsGroup from "@codegouvfr/react-dsfr/ButtonsGroup";
 import Card from "@codegouvfr/react-dsfr/Card";
@@ -6,6 +7,7 @@ import Tooltip from "@codegouvfr/react-dsfr/Tooltip";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { getISOWeek, getISOWeekYear } from "date-fns";
 import dynamic from "next/dynamic";
+import { useEffect, useRef } from "react";
 
 import { ClientAnimate } from "@/components/utils/ClientAnimate";
 import { ClientOnly, useHasMounted } from "@/components/utils/ClientOnly";
@@ -50,31 +52,60 @@ const dateFormatter = (date: Date, periodicity: keyof typeof FORMATERS = DEFAULT
 
 interface StartupCardProps {
   input: StatInput;
+  onQuerySettled?: () => void;
   startup: EnrichedStartup;
 }
 
-export function StartupCard({ input, startup }: StartupCardProps) {
+export function StartupCard({ input, onQuerySettled, startup }: StartupCardProps) {
   const mounted = useHasMounted();
 
   const query = useQuery({
+    // Ne pas fetch si la startup n'existe pas sur beta.gouv.fr
+    enabled: !startup.betaNotFound,
     // garde les données précédentes pendant le refetch quand l'input change
     placeholderData: keepPreviousData,
     queryFn: async () => {
       const res = await fetchStats(startup.id, input);
-      if (!res.ok) throw new Error(res.error || "Erreur lors de la récupération des données.");
+      if (!res.ok) throw new Error(res.error ?? "Erreur lors de la récupération des données.");
       return res.data;
     },
     queryKey: ["stats", startup.id, input.periodicity, input.since ?? null],
   });
 
-  const periodicity = input.periodicity;
-  const errorMsg = query.error?.message ?? "";
+  // Notifier le parent quand la query se termine pour re-trier les cards
+  const settled = !!startup.betaNotFound || (!query.isLoading && !query.isFetching);
+  const prevSettled = useRef(false);
+  useEffect(() => {
+    if (settled && !prevSettled.current) {
+      onQuerySettled?.();
+    }
+    prevSettled.current = settled;
+  }, [settled, onQuerySettled]);
 
-  return (
+  const periodicity = input.periodicity;
+  const rawErrorMsg = query.error?.message ?? "";
+
+  // Sépare le message d'erreur du raw data (délimiteur ---RAW---)
+  const rawIdx = rawErrorMsg.indexOf("\n---RAW---\n");
+  const errorMsg = rawIdx === -1 ? rawErrorMsg : rawErrorMsg.slice(0, rawIdx);
+  const rawData = rawIdx === -1 ? "" : rawErrorMsg.slice(rawIdx + "\n---RAW---\n".length);
+
+  const cardContent = (
     <Card
       title={
         <div className="flex justify-between">
-          <div className="flex gap-[1rem]">{startup.name}</div>
+          <div className="flex gap-[1rem]">
+            {startup.name}
+            {startup.betaNotFound && (
+              <ClientOnly>
+                <Tooltip
+                  title={`Startup "${startup.id}" introuvable sur beta.gouv.fr - l'identifiant a peut-être changé`}
+                >
+                  <Icon icon="fr-icon-warning-fill" size="xl" color="text-mention-grey" />
+                </Tooltip>
+              </ClientOnly>
+            )}
+          </div>
           {!!errorMsg && (
             <ClientOnly>
               <Tooltip title={errorMsg}>
@@ -88,6 +119,42 @@ export function StartupCard({ input, startup }: StartupCardProps) {
       shadow
       horizontal
       size="large"
+      end={
+        <ClientAnimate className={styles["startup-card--body"]}>
+          {startup.betaNotFound ? (
+            <Text color={fr.colors.decisions.text.mention.grey.default}>Startup introuvable sur beta.gouv.fr</Text>
+          ) : !mounted || query.isLoading || query.isFetching || query.isRefetching ? (
+            <Loader loading size="2em" />
+          ) : query.isError ? (
+            <div>
+              <Text color={fr.colors.decisions.text.default.error.default}>{errorMsg}</Text>
+              {rawData && (
+                <Accordion label="Données brutes de la réponse">
+                  <pre style={{ fontSize: "0.75rem", maxHeight: "12rem", overflow: "auto", whiteSpace: "pre-wrap" }}>
+                    {rawData}
+                  </pre>
+                </Accordion>
+              )}
+            </div>
+          ) : query.data?.stats?.length ? (
+            <MuiBarLineChart
+              barData={query.data.stats.map(stat => stat.value)}
+              lineData={query.data.stats.map(stat => stat.variation)}
+              nameLine="Variation (%)"
+              nameBar={query.data.description ?? "North Star metric"}
+              x={query.data.stats.map(stat => dateFormatter(stat.date, periodicity))}
+              xTickInterval={TICK_INTERVALS[periodicity]}
+              xName="Date"
+              barId="north-star"
+              lineId="variation"
+              barAxisWidth={100}
+              lineValueFormatter={value => `${value}%`}
+            />
+          ) : (
+            <Text variant="xl">Pas de données.</Text>
+          )}
+        </ClientAnimate>
+      }
       footer={
         <ButtonsGroup
           alignment="right"
@@ -112,35 +179,12 @@ export function StartupCard({ input, startup }: StartupCardProps) {
           ]}
         />
       }
-      desc={
-        <ClientAnimate as="span" className={styles["startup-card--body"]}>
-          {!mounted || query.isLoading || query.isFetching || query.isRefetching ? (
-            <Loader loading size="2em" />
-          ) : query.isError ? (
-            <Text inline color={fr.colors.decisions.text.default.error.default}>
-              {errorMsg}
-            </Text>
-          ) : query.data?.stats?.length ? (
-            <MuiBarLineChart
-              barData={query.data.stats.map(stat => stat.value)}
-              lineData={query.data.stats.map(stat => stat.variation)}
-              nameLine="Variation (%)"
-              nameBar={query.data.description ?? "North Star metric"}
-              x={query.data.stats.map(stat => dateFormatter(stat.date, periodicity))}
-              xTickInterval={TICK_INTERVALS[periodicity]}
-              xName="Date"
-              barId="north-star"
-              lineId="variation"
-              barAxisWidth={100}
-              lineValueFormatter={value => `${value}%`}
-            />
-          ) : (
-            <Text inline variant="xl">
-              Pas de données.
-            </Text>
-          )}
-        </ClientAnimate>
-      }
     />
   );
+
+  if (startup.betaNotFound) {
+    return <div className={styles["startup-card--not-found"]}>{cardContent}</div>;
+  }
+
+  return cardContent;
 }

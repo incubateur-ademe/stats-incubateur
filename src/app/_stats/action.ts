@@ -5,7 +5,7 @@ import z from "zod";
 import { gistConfigClient } from "@/lib/db/gist/client";
 import { type ServerActionResponse } from "@/utils/next";
 
-import { type EnrichedStats, type StatInput, statInputSchema, type StatOuput } from "./types";
+import { type EnrichedStats, type Stat, type StatInput, statInputSchema, type StatOuput } from "./types";
 
 export const fetchStats = async (startupId: string, input: StatInput): Promise<ServerActionResponse<EnrichedStats>> => {
   const { startups } = await gistConfigClient.getConfig();
@@ -51,28 +51,50 @@ export const fetchStats = async (startupId: string, input: StatInput): Promise<S
 
   if (!response.ok) {
     console.warn(`Erreur lors de la récupération des stats pour ${startupId}:`, response.statusText);
+    console.warn(`URL de stats: ${url.toString()}`);
     return {
       error: `Erreur lors de la récupération des stats pour ${startupId}: ${response.statusText}`,
       ok: false,
     };
   }
 
-  const json = JSON.parse(await response.text(), function (key, value) {
-    if (key == "date") {
-      if (typeof value === "string") {
-        return new Date(Date.parse(value));
-      } else if (typeof value === "number") {
-        return new Date(value * 1000);
-      } else {
-        return null;
+  const rawText = await response.text();
+
+  let json: unknown;
+  try {
+    json = JSON.parse(rawText, function (key, value) {
+      if (key == "date") {
+        if (typeof value === "string") {
+          return new Date(Date.parse(value));
+        } else if (typeof value === "number") {
+          return new Date(value * 1000);
+        } else {
+          return null;
+        }
       }
-    }
-    return value as unknown;
-  }) as StatOuput;
+      return value as unknown;
+    });
+  } catch {
+    return {
+      error: `Réponse non-JSON pour ${startupId}.\n---RAW---\n${rawText.slice(0, 2000)}`,
+      ok: false,
+    };
+  }
+
+  const parsed2 = json as Partial<StatOuput> | null;
+  if (!parsed2 || !Array.isArray(parsed2.stats)) {
+    return {
+      error: `Données malformées pour ${startupId} : le champ "stats" est absent ou invalide.\n---RAW---\n${JSON.stringify(json, null, 2).slice(0, 2000)}`,
+      ok: false,
+    };
+  }
+
+  // Filtrer les entries avec des dates invalides (null du JSON reviver)
+  const validStats = parsed2.stats.filter((s): s is Stat => s.date instanceof Date && !isNaN(s.date.getTime()));
 
   // set variation for each stat
-  const stats = json.stats.map((stat, index) => {
-    const previousValue = index > 0 ? json.stats[index - 1].value : null;
+  const stats = validStats.map((stat, index) => {
+    const previousValue = index > 0 ? validStats[index - 1].value : null;
     const variation =
       previousValue !== null && previousValue !== 0 ? ((stat.value - previousValue) / previousValue) * 100 : 0;
 
@@ -84,7 +106,7 @@ export const fetchStats = async (startupId: string, input: StatInput): Promise<S
 
   return {
     data: {
-      description: json.description,
+      description: parsed2.description,
       stats,
     },
     ok: true,

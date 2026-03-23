@@ -34,6 +34,8 @@ export interface EnrichedStats {
 }
 
 export interface EnrichedStartup extends StartupConfig {
+  /** true si la startup n'a pas été trouvée sur beta.gouv.fr (404) - id probablement obsolète */
+  betaNotFound?: boolean;
   name: string;
   website?: string;
 }
