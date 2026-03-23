@@ -19,6 +19,9 @@ export const GET = (request: NextRequest) => {
   }
 
   const returnTo = new URL(searchParams.get("returnTo") || "/admin", config.host);
+  if (returnTo.origin !== new URL(config.host).origin) {
+    return new NextResponse(ReasonPhrases.BAD_REQUEST, { status: StatusCodes.BAD_REQUEST });
+  }
 
   // handle cookies based auth
   const authCookie = getAuthCookie(request.cookies);

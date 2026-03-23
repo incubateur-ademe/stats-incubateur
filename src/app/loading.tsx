@@ -1,13 +1,12 @@
 import { fr } from "@codegouvfr/react-dsfr";
 
 import { ClipLoader } from "@/components/ReactSpinners";
-import { Container } from "@/dsfr";
 
 const DefaultLoading = () => {
   return (
-    <Container className="flex-1 flex items-center justify-center h-full my-10">
+    <div className="flex items-center justify-center" style={{ minHeight: "50vh" }}>
       <ClipLoader color={fr.colors.decisions.text.default.grey.default} size="4em" />
-    </Container>
+    </div>
   );
 };
 

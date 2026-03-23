@@ -1,75 +1,190 @@
 .root {
-    /* hauteur totale : viewport - offset footer éventuel */
     block-size: calc(100dvh - 4em);
     display: grid;
     grid-template-rows: auto 1fr;
-    /* actions/alert + colonnes */
     gap: 1rem;
-    /* ajuste avec tes tokens DSFR si tu veux */
 }
 
-/* barre d’actions + alert */
+/* barre d'actions sticky */
 .actions {
     position: sticky;
-    /* reste visible si la page scrolle */
     top: 0;
     z-index: 2;
     padding-block: .5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: .5rem;
+    background: var(--background-default-grey);
+    border-bottom: 1px solid var(--border-default-grey, #ddd);
+}
+
+.actionsLeft {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    flex-wrap: wrap;
+}
+
+.actionsRight {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+/* alert de status */
+.statusBar {
+    width: 100%;
+    order: 99;
+}
+
+/* indicateur dirty */
+.dirtyBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: .25rem;
+    padding: .125rem .5rem;
+    border-radius: 1rem;
+    font-size: .75rem;
+    font-weight: 600;
+    background: var(--background-action-high-error);
+    color: var(--text-inverted-error);
 }
 
 /* conteneur des deux colonnes */
 .columns {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 2fr;
     gap: 1rem;
     min-height: 0;
-    /* 🔑 autorise le shrink pour que l’overflow marche */
+
+    @media (max-width: 62em) {
+        grid-template-columns: 1fr;
+    }
 }
 
-/* chaque colonne (boîte) */
+/* chaque colonne */
 .col {
     min-height: 0;
-    /* 🔑 */
     overflow: hidden;
-    /* on scrolle à l’intérieur de .scroll */
     border: 1px solid var(--border-default-grey, #ddd);
     border-radius: .5rem;
-    // background: var(--background-alt-grey, #fafafa);
     display: flex;
     flex-direction: column;
 }
 
-/* header de colonne (titre + bouton “Ajouter”) */
+/* header de colonne */
 .colHeader {
     position: sticky;
     top: 0;
     z-index: 1;
-    background: inherit;
+    background: var(--background-default-grey);
     border-bottom: 1px solid var(--border-default-grey, #ddd);
     padding: .75rem 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+
+    .colHeaderTop {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .5rem;
+    }
+
+    .colHeaderSearch {
+        margin-top: .5rem;
+    }
 }
 
-/* zone qui scrolle indépendamment */
+/* zone qui scrolle independamment */
 .scroll {
     flex: 1 1 auto;
     min-height: 0;
-    /* 🔑 sans ça, pas de scroll interne */
     overflow: auto;
-    // overscroll-behavior: contain;
     padding: 1rem;
     scrollbar-gutter: stable both-edges;
-    /* évite les sauts de layout */
 }
 
-/* “cartes” internes (tes blocs bleus/gris) */
+/* cartes internes */
 .card {
     margin-block-end: 1rem;
     padding: 1rem;
     border-radius: .5rem;
     background: var(--background-alt-grey);
-    /* ou tes variantes DSFR */
     box-shadow: 0 1px 0 rgba(0, 0, 0, .04);
+}
+
+/* resume de card (repliable) */
+.cardSummary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+    user-select: none;
+    padding: .25rem 0;
+}
+
+.cardSummaryLeft {
+    all: unset;
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    min-width: 0;
+    cursor: pointer;
+    flex: 1;
+
+    &:hover {
+        opacity: .8;
+    }
+}
+
+.cardId {
+    font-family: monospace;
+    font-size: .85rem;
+    color: var(--text-mention-grey);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 12rem;
+}
+
+.cardName {
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cardSummaryRight {
+    display: flex;
+    align-items: center;
+    gap: .25rem;
+    flex-shrink: 0;
+}
+
+.cardChevron {
+    transition: transform .2s ease;
+    flex-shrink: 0;
+    cursor: pointer;
+
+    &[data-open="true"] {
+        transform: rotate(180deg);
+    }
+}
+
+/* footer de card avec bouton supprimer */
+.cardFooter {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: .75rem;
+    padding-top: .75rem;
+    border-top: 1px solid var(--border-default-grey, #ddd);
+}
+
+.deleteBtn {
+    color: var(--text-default-error) !important;
+    font-size: .8rem;
+
+    &:hover {
+        background: var(--background-action-low-error) !important;
+    }
 }

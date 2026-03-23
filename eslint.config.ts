@@ -243,7 +243,7 @@ export default defineConfig([
       "eslint.config.ts",
       "tailwind.config.ts",
       "next-sitemap.config.js",
-      "postcss.config.js",
+      "postcss.config.ts",
       "global.d.ts",
     ],
     rules: {

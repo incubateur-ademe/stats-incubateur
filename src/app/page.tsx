@@ -1,3 +1,4 @@
+import Notice from "@codegouvfr/react-dsfr/Notice";
 import { type Metadata } from "next";
 
 import { Container } from "@/dsfr";
@@ -27,7 +28,11 @@ const Home = async () => {
     <DsfrPage>
       <Container py="4w" fluid px="4w">
         <h2>Statistiques des Startups de l'Incubateur</h2>
-        <GlobalForm startups={orderedStartups} />
+        {orderedStartups.length === 0 ? (
+          <Notice title="Aucune startup configuree pour le moment." />
+        ) : (
+          <GlobalForm startups={orderedStartups} />
+        )}
       </Container>
     </DsfrPage>
   );

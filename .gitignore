@@ -70,3 +70,6 @@ certificates
 /src/generated/*
 !/src/generated/.gitattributes
 next-env.d.ts
+
+# claude code
+.claude/settings.local.json
