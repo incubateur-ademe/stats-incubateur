@@ -1,5 +1,4 @@
 {
-  "typescript.tsdk": ".yarn/sdks/typescript/lib",
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
   },
@@ -15,7 +14,7 @@
   "files.associations": {
     ".env*": "dotenv"
   },
-  "typescript.preferences.autoImportSpecifierExcludeRegexes": [
+  "js/ts.preferences.autoImportSpecifierExcludeRegexes": [
     "^node",
     "^postcss",
     "^@codegouvfr/react-dsfr/fr/cx$",
@@ -25,10 +24,8 @@
     "^@mui/[^/]+$"
   ],
   "search.exclude": {
-    "**/.yarn": true,
     "**/.pnp.*": true
   },
-  "eslint.nodePath": ".yarn/sdks",
-  "prettier.prettierPath": ".yarn/sdks/prettier/index.cjs",
-  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "js/ts.tsdk.promptToUseWorkspaceVersion": true,
+  "js/ts.tsdk.path": "node_modules/typescript/lib",
 }

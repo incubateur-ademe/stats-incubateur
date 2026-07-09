@@ -84,7 +84,7 @@ export function StartupDetail({ name, startupId }: StartupDetailProps) {
   const [periodicity, setPeriodicity] = useState<StatInput["periodicity"]>(DEFAULT_PERIODICITY);
   const [since, setSince] = useState<number | undefined>(undefined);
 
-  const debouncedInput = useDebouncedValue<StatInput>({ periodicity, since } as StatInput, 300);
+  const debouncedInput = useDebouncedValue<StatInput>({ periodicity, since }, 300);
 
   const query = useQuery({
     placeholderData: keepPreviousData,

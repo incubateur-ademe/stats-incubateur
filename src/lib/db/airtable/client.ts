@@ -17,7 +17,7 @@ export interface CustomBase<TBaseName extends keyof BaseMapping> extends Omit<Ba
   table<
     TBase extends BaseMapping[TBaseName],
     TTableName extends keyof TBase,
-    TFieldSet extends TBase[TTableName] extends FieldSet ? TBase[TTableName] : FieldSet,
+    TFieldSet extends (TBase[TTableName] extends FieldSet ? TBase[TTableName] : FieldSet),
   >(
     tableName: TTableName,
   ): Table<TFieldSet>;

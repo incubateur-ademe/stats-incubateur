@@ -34,7 +34,7 @@ const nextFiles = [
 
 export default defineConfig([
   {
-    ignores: ["node_modules/**", "src/generated/**", "**/*.js?(x)", "\\.yarn/**", "\\.husky/**"],
+    ignores: ["node_modules/**", "src/generated/**", "**/*.js?(x)", "\\.husky/**"],
     name: "Global ignore patterns",
   },
   {

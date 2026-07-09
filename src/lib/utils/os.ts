@@ -42,7 +42,7 @@ const ensureNextEnvVar_: DefaultEnsureNextEnvVar = (envVar, transformerOrDefault
   return envVar ?? transformerOrDefaultValue!;
 };
 // TODO use "satisfies"
-export const ensureNextEnvVar = ensureNextEnvVar_ as EnsureNextEnvVar;
+export const ensureNextEnvVar = ensureNextEnvVar_;
 
 const ensureApiEnvVar_: DefaultEnsureNextEnvVar = (key, transformerOrDefaultValue, defaultValue) => {
   if (typeof window === "undefined") {
@@ -51,4 +51,4 @@ const ensureApiEnvVar_: DefaultEnsureNextEnvVar = (key, transformerOrDefaultValu
   const defaultValueToTest = typeof transformerOrDefaultValue !== "function" ? transformerOrDefaultValue : defaultValue;
   return defined(defaultValueToTest);
 };
-export const ensureApiEnvVar = ensureApiEnvVar_ as EnsureNextEnvVar;
+export const ensureApiEnvVar = ensureApiEnvVar_;

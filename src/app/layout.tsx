@@ -5,7 +5,7 @@ import Display from "@codegouvfr/react-dsfr/Display/Display";
 import MuiDsfrThemeProvider from "@codegouvfr/react-dsfr/mui";
 import { SkipLinks } from "@codegouvfr/react-dsfr/SkipLinks";
 import { cx } from "@codegouvfr/react-dsfr/tools/cx";
-import { AppRouterCacheProvider } from "@mui/material-nextjs/v15-appRouter";
+import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
 import { type Metadata } from "next";
 import { type PropsWithChildren } from "react";
 import { SkeletonTheme } from "react-loading-skeleton";

@@ -9,19 +9,19 @@ Dashboard de statistiques des startups incubées par l'ADEME. Agrège les KPIs d
 ## Commandes
 
 ```bash
-yarn dev          # Dev server (Turbopack) sur http://localhost:3000
-yarn build        # Build production (Turbopack)
-yarn lint         # ESLint (flat config)
-yarn start        # Serveur de production
+pnpm dev          # Dev server (Turbopack) sur http://localhost:3000
+pnpm build        # Build production (Turbopack)
+pnpm lint         # ESLint (flat config)
+pnpm start        # Serveur de production
 ```
 
 ## Stack
 
 - **Next.js 16** App Router, React 19, React Compiler activé
 - **TypeScript 5.9** strict, path alias `@/*` → `src/*`
-- **DSFR** (@codegouvfr/react-dsfr) + **MUI v7** avec thème DSFR
+- **DSFR** (@codegouvfr/react-dsfr) + **MUI v9** avec thème DSFR
 - **Tailwind CSS v4** + **SCSS modules** pour le styling composant
-- **Yarn 4**, Node 24
+- **PNPM 11**, Node 24
 
 ## Architecture
 
@@ -68,4 +68,4 @@ Requises : `GIST_CONFIG_TOKEN`, `GIST_CONFIG_ID`, `ADMIN_LOGIN`, `ADMIN_PASSWORD
 
 Avec défauts : `BETA_GOUV_URL`, `NEXT_PUBLIC_SITE_URL`, `GIST_CONFIG_FILENAME`, `MAINTENANCE_MODE`
 
-Générer les types : `yarn generateEnvDeclaration`
+Générer les types : `pnpm generateEnvDeclaration`

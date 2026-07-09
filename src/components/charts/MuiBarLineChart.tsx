@@ -2,8 +2,8 @@
 
 import { fr } from "@codegouvfr/react-dsfr";
 import { BarPlot } from "@mui/x-charts/BarChart";
-import { ChartContainer } from "@mui/x-charts/ChartContainer";
 import { ChartsAxisHighlight } from "@mui/x-charts/ChartsAxisHighlight";
+import { ChartsContainer } from "@mui/x-charts/ChartsContainer";
 import { ChartsTooltip } from "@mui/x-charts/ChartsTooltip";
 import { ChartsXAxis } from "@mui/x-charts/ChartsXAxis";
 import { ChartsYAxis } from "@mui/x-charts/ChartsYAxis";
@@ -101,7 +101,7 @@ export const MuiBarLineChart = ({
   const xId = `x-${autoId}`;
 
   return (
-    <ChartContainer
+    <ChartsContainer
       skipAnimation
       series={series}
       height={height}
@@ -162,6 +162,6 @@ export const MuiBarLineChart = ({
         labelStyle={axisTextFill}
       />
       <ChartsTooltip />
-    </ChartContainer>
+    </ChartsContainer>
   );
 };

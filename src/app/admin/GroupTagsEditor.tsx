@@ -80,13 +80,13 @@ export function GroupTagsEditor({ label = "Ajouter un groupe", onChange, options
         filterSelectedOptions
         slotProps={{ listbox: { style: { maxHeight: 240 } } }}
         renderInput={params => (
-          <div ref={params.InputProps.ref}>
+          <div ref={params.slotProps.input.ref}>
             <Input
               iconId="fr-icon-search-line"
               label={label}
-              className={cx(params.inputProps.className)}
+              className={cx(params.slotProps.htmlInput.className)}
               nativeInputProps={{
-                ...params.inputProps,
+                ...params.slotProps.htmlInput,
                 onKeyDown: e => {
                   if (e.key === "Enter") {
                     e.preventDefault();
@@ -94,7 +94,7 @@ export function GroupTagsEditor({ label = "Ajouter un groupe", onChange, options
                     if (first) addOne(first.id);
                   }
                 },
-                placeholder: params.inputProps.placeholder ?? "Rechercher un groupe...",
+                placeholder: params.slotProps.htmlInput.placeholder ?? "Rechercher un groupe...",
               }}
             />
           </div>

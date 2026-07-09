@@ -4,7 +4,7 @@ stats.incubateur.ademe.fr
 
 ## Installation et lancement local
 ```bash
-yarn install
-yarn dev
+pnpm install
+pnpm dev
 open http://localhost:3000
 ```

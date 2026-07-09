@@ -137,9 +137,9 @@ export interface NextError extends Error {
   digest?: string;
 }
 enum RedirectStatusCode {
-  PermanentRedirect = 308,
   SeeOther = 303,
   TemporaryRedirect = 307,
+  PermanentRedirect = 308,
 }
 export function isRedirectError(error: NextError): boolean {
   if (typeof error !== "object" || error === null || !("digest" in error) || typeof error.digest !== "string") {

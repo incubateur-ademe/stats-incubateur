@@ -25,7 +25,7 @@ export const orderAndEnrichStartups = async (startups: StartupConfig[]): Promise
       if (r.status === "fulfilled") return r.value;
       // Fallback pour les rejections (erreur reseau, etc.) - on garde la startup avec un nom de repli
       const s = enabledStartups[i];
-      return { ...s, betaNotFound: true, name: s.nameOverride ?? s.id, website: undefined } as EnrichedStartup;
+      return { ...s, betaNotFound: true, name: s.nameOverride ?? s.id, website: undefined };
     })
     .sort((a, b) => {
       // Startups non trouvées sur beta.gouv.fr en dernier
