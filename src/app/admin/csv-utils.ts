@@ -96,6 +96,10 @@ export const parseConfigFromCsv = (csv: string): Pick<FullConfig, "groups" | "st
 
     const cols = parseCsvLine(line);
 
+    // Les deux en-tetes commencent par "id": on ignore toute ligne d'en-tete, y compris
+    // celles d'un ancien format CSV que la comparaison exacte ci-dessus laisserait passer.
+    if (cols[0] === "id") continue;
+
     if (section === "groups" && cols.length >= 2) {
       groups.push({
         description: cols[2] || undefined,
