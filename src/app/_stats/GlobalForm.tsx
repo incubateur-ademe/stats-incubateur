@@ -56,10 +56,12 @@ const SINCE_OPTIONS: Record<FormType["periodicity"], Array<{ label: string; valu
 // ------------------ Forme globale ------------------
 
 interface GlobalFormProps {
+  defaultOrder: "alpha" | "config" | "stats-first";
+  showTrend: boolean;
   startups: EnrichedStartup[];
 }
 
-export const GlobalForm = ({ startups }: GlobalFormProps) => {
+export const GlobalForm = ({ defaultOrder, showTrend, startups }: GlobalFormProps) => {
   const queryClient = useQueryClient();
 
   const methods = useForm<FormType>({
@@ -87,8 +89,11 @@ export const GlobalForm = ({ startups }: GlobalFormProps) => {
   // Compteur pour forcer le re-tri quand une query se termine
   const [settledCount, setSettledCount] = useState(0);
 
-  // Tri dynamique : les cards avec données en cache passent en premier
+  // Tri dynamique : les cards avec données en cache passent en premier.
+  // Uniquement pour l'ordre "stats-first" ; sinon l'ordre serveur (alpha/config) fait foi.
   const sortedStartups = useMemo(() => {
+    if (defaultOrder !== "stats-first") return startups;
+
     const hasData = (s: EnrichedStartup) => {
       const data = queryClient.getQueryData<{ stats?: unknown[] }>([
         "stats",
@@ -108,7 +113,7 @@ export const GlobalForm = ({ startups }: GlobalFormProps) => {
     });
     // settledCount force le recalcul quand une query se termine
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startups, debouncedInput, queryClient, settledCount]);
+  }, [startups, debouncedInput, queryClient, settledCount, defaultOrder]);
 
   const onQuerySettled = useCallback(() => setSettledCount(c => c + 1), []);
 
@@ -152,6 +157,12 @@ export const GlobalForm = ({ startups }: GlobalFormProps) => {
     if (!initializedFromURL.current) return; // attendre l'init depuis l’URL
 
     const params = new URLSearchParams();
+
+    // Preserver le filtre de groupe pose par la navigation (sinon router.replace l'ecraserait)
+    const group = searchParams.get("group");
+    if (group) {
+      params.set("group", group);
+    }
 
     // n’inclure QUE les non-défauts
     if (watchedPeriodicity !== DEFAULT_PERIODICITY) {
@@ -216,7 +227,7 @@ export const GlobalForm = ({ startups }: GlobalFormProps) => {
       <ClientAnimate className={fr.cx("fr-grid-row", "fr-grid-row--gutters")}>
         {sortedStartups.map(s => (
           <GridCol base={gridBase} key={s.id} className={styles["startup-card"]}>
-            <StartupCard startup={s} input={debouncedInput} onQuerySettled={onQuerySettled} />
+            <StartupCard startup={s} input={debouncedInput} onQuerySettled={onQuerySettled} showTrend={showTrend} />
           </GridCol>
         ))}
       </ClientAnimate>

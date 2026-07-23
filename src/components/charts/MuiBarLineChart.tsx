@@ -58,6 +58,11 @@ export interface MuiBarLineChartProps {
   lineValueFormatter?: YAxis<"linear">["valueFormatter"];
   nameBar: string;
   nameLine: string;
+  /**
+   * Afficher la serie ligne (variation), son axe Y droit et ses plots.
+   * @default true
+   */
+  showLine?: boolean;
   x: string[];
   xHeight?: number;
   xName?: string;
@@ -77,6 +82,7 @@ export const MuiBarLineChart = ({
   lineValueFormatter,
   nameBar,
   nameLine,
+  showLine = true,
   x,
   xHeight = 40,
   xName = "Date",
@@ -97,8 +103,27 @@ export const MuiBarLineChart = ({
     yAxisId: `${lineId}-${autoId}`,
   };
 
-  const series: AllSeriesType[] = [barSerie, lineSerie];
+  const series: AllSeriesType[] = showLine ? [barSerie, lineSerie] : [barSerie];
   const xId = `x-${autoId}`;
+
+  const yAxis: YAxis[] = [
+    {
+      id: barSerie.yAxisId,
+      position: "left",
+      scaleType: "linear",
+      valueFormatter: barValueFormatter,
+      width: barAxisWidth,
+    },
+  ];
+  if (showLine) {
+    yAxis.push({
+      id: lineSerie.yAxisId,
+      position: "right",
+      scaleType: "linear",
+      valueFormatter: lineValueFormatter,
+      width: lineAxisWidth,
+    });
+  }
 
   return (
     <ChartsContainer
@@ -114,29 +139,13 @@ export const MuiBarLineChart = ({
           valueFormatter: xValueFormatter,
         },
       ]}
-      yAxis={[
-        {
-          id: barSerie.yAxisId,
-          position: "left",
-          scaleType: "linear",
-          valueFormatter: barValueFormatter,
-          width: barAxisWidth,
-        },
-        {
-          id: lineSerie.yAxisId,
-          position: "right",
-          scaleType: "linear",
-          // valueFormatter: value => `${value}%`,
-          valueFormatter: lineValueFormatter,
-          width: lineAxisWidth,
-        },
-      ]}
+      yAxis={yAxis}
     >
       <ChartsAxisHighlight x="line" />
       <BarPlot />
-      <LinePlot />
+      {showLine && <LinePlot />}
 
-      <LineHighlightPlot />
+      {showLine && <LineHighlightPlot />}
       <ChartsXAxis
         label={xName}
         axisId={xId}
@@ -155,13 +164,18 @@ export const MuiBarLineChart = ({
         tickLabelStyle={{ fontSize: 10, ...axisTextFill }}
         labelStyle={axisTextFill}
       />
-      <ChartsYAxis
-        label={lineSerie.label as string}
-        axisId={lineSerie.yAxisId}
-        tickLabelStyle={{ fontSize: 10, ...axisTextFill }}
-        labelStyle={axisTextFill}
-      />
-      <ChartsTooltip />
+      {showLine && (
+        <ChartsYAxis
+          label={lineSerie.label as string}
+          axisId={lineSerie.yAxisId}
+          tickLabelStyle={{ fontSize: 10, ...axisTextFill }}
+          labelStyle={axisTextFill}
+        />
+      )}
+      {/* Porte le tooltip dans body: sinon le transform (identite) pose par auto-animate sur les
+          wrappers de card fait resoudre son position:fixed contre la card, d'ou decalage au scroll
+          et passage derriere les autres cards. */}
+      <ChartsTooltip container={typeof document === "undefined" ? undefined : () => document.body} />
     </ChartsContainer>
   );
 };

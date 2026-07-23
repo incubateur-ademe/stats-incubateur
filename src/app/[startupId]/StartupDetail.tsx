@@ -77,10 +77,11 @@ const dateFormatter = (date: Date, periodicity: keyof typeof FORMATERS = DEFAULT
 
 interface StartupDetailProps {
   name: string;
+  showTrend: boolean;
   startupId: string;
 }
 
-export function StartupDetail({ name, startupId }: StartupDetailProps) {
+export function StartupDetail({ name, showTrend, startupId }: StartupDetailProps) {
   const [periodicity, setPeriodicity] = useState<StatInput["periodicity"]>(DEFAULT_PERIODICITY);
   const [since, setSince] = useState<number | undefined>(undefined);
 
@@ -172,6 +173,7 @@ export function StartupDetail({ name, startupId }: StartupDetailProps) {
             lineId="detail-variation"
             barAxisWidth={100}
             lineValueFormatter={value => `${value}%`}
+            showLine={showTrend}
             height={600}
           />
         ) : (

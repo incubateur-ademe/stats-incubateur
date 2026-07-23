@@ -45,9 +45,24 @@ export const StartupGroupConfigSchema = z.object({
     .regex(/^[a-z0-9-._]+$/, "id: minuscules, chiffres, tirets, points, underscores"),
   /** Name of the group */
   name: z.string().min(1, "Le nom du groupe est requis"),
+  /** Afficher le groupe en tag sur les cards des startups */
+  showAsTag: z.boolean().optional(),
+  /** Afficher le groupe comme lien direct dans la navigation du header */
+  showInNav: z.boolean().optional(),
+});
+
+export const SettingsConfigSchema = z.object({
+  /** Ordre d'affichage par defaut des startups */
+  defaultOrder: z.enum(["stats-first", "alpha", "config"]).default("stats-first"),
+  /** Afficher la ligne de tendance/variation sur les graphes */
+  showTrend: z.boolean().default(true),
 });
 
 export const StartupConfigSchema = z.object({
+  /** Traiter la startup comme valide meme sans fiche beta.gouv.fr (cas d'une sous-startup) */
+  allowNoBeta: z.boolean().optional(),
+  /** URL budget de repli, utilisee quand beta.gouv.fr n'expose pas de budget_url */
+  budgetUrlOverride: z.url("URL invalide").optional(),
   /** Whether the startup is enabled (visible in the UI) */
   enabled: z.boolean().optional(),
   /** Groups the startup belongs to (ids) */
@@ -57,6 +72,8 @@ export const StartupConfigSchema = z.object({
     .string()
     .min(1, "L'id de la startup est requis.")
     .regex(/^[a-z0-9-._]+$/, "id: minuscules, chiffres, tirets, points, underscores"),
+  /** URL mesure d'impact de repli, utilisee quand beta.gouv.fr n'expose pas d'impact_url */
+  impactUrlOverride: z.url("URL invalide").optional(),
   /** Custom name to use instead of the one from beta.gouv.fr */
   nameOverride: z
     .string()
@@ -76,6 +93,7 @@ export const StartupConfigSchema = z.object({
 export const FullConfigSchema = z
   .object({
     groups: z.array(StartupGroupConfigSchema),
+    settings: SettingsConfigSchema.prefault({}),
     startups: z.array(StartupConfigSchema),
   })
   .check(ctx => {
@@ -125,5 +143,6 @@ export const FullConfigSchema = z
   });
 
 export type FullConfig = z.infer<typeof FullConfigSchema>;
+export type SettingsConfig = z.infer<typeof SettingsConfigSchema>;
 export type StartupConfig = z.infer<typeof StartupConfigSchema>;
 export type StartupGroupConfig = z.infer<typeof StartupGroupConfigSchema>;

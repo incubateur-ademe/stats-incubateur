@@ -2,11 +2,14 @@ import { Container } from "@/dsfr";
 import { DsfrPage } from "@/dsfr/layout/DsfrPage";
 import { gistConfigClient } from "@/lib/db/gist/client";
 import { fetchBetaStartup } from "@/lib/fetchBetaStartup";
+import { SettingsConfigSchema } from "@/startup-types";
 
 import { AdminConfigForm } from "../AdminConfigForm";
 
 const AdminPage = async () => {
   const gistConfig = await gistConfigClient.getConfig();
+
+  const initialConfig = { ...gistConfig, settings: SettingsConfigSchema.parse(gistConfig.settings ?? {}) };
 
   // Fetch les noms beta.gouv.fr pour toutes les startups en parallele
   const betaResults = await Promise.allSettled(
@@ -26,7 +29,7 @@ const AdminPage = async () => {
     <DsfrPage>
       <Container fluid py="4w" px="2w">
         <h1>Configuration - Admin</h1>
-        <AdminConfigForm initialConfig={gistConfig} initialBetaNames={betaNames} />
+        <AdminConfigForm initialConfig={initialConfig} initialBetaNames={betaNames} />
       </Container>
     </DsfrPage>
   );

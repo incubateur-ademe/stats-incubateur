@@ -2,6 +2,8 @@ import z from "zod";
 
 import { type StartupConfig } from "@/startup-types";
 
+import { type StartupTag } from "./links";
+
 export interface StatRaw {
   date: number | string; // ISO date string or timestamp
   /**
@@ -36,7 +38,10 @@ export interface EnrichedStats {
 export interface EnrichedStartup extends StartupConfig {
   /** true si la startup n'a pas pu etre recuperee sur beta.gouv.fr (404, 500, erreur reseau...) */
   betaNotFound?: boolean;
+  budgetUrl?: string;
+  impactUrl?: string;
   name: string;
+  tags: StartupTag[];
   website?: string;
 }
 

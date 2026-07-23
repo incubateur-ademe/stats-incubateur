@@ -4,6 +4,8 @@
 import Badge from "@codegouvfr/react-dsfr/Badge";
 import Button from "@codegouvfr/react-dsfr/Button";
 import Input from "@codegouvfr/react-dsfr/Input";
+import Select from "@codegouvfr/react-dsfr/Select";
+import ToggleSwitch from "@codegouvfr/react-dsfr/ToggleSwitch";
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, FormProvider, useFieldArray, useForm, useWatch } from "react-hook-form";
@@ -62,6 +64,7 @@ export const AdminConfigForm = ({ initialBetaNames = {}, initialConfig }: Props)
 
   const watchedGroups = useWatch({ control, name: "groups" });
   const watchedStartups = useWatch({ control, name: "startups" });
+  const showTrend = useWatch({ control, name: "settings.showTrend" });
 
   const [status, setStatus] = useState<{ text: string; type: "err" | "ok" } | null>(null);
   const [groupSearch, setGroupSearch] = useState("");
@@ -210,7 +213,7 @@ export const AdminConfigForm = ({ initialBetaNames = {}, initialConfig }: Props)
     reader.onload = () => {
       try {
         const parsed = parseConfigFromCsv(reader.result as string);
-        reset(parsed, { keepDirty: false });
+        reset({ ...parsed, settings: getValues("settings") }, { keepDefaultValues: true });
         setStatus({ text: "CSV importe. Verifiez et enregistrez.", type: "ok" });
       } catch {
         setStatus({ text: "Erreur lors du parsing du fichier CSV.", type: "err" });
@@ -283,6 +286,24 @@ export const AdminConfigForm = ({ initialBetaNames = {}, initialConfig }: Props)
             </div>
           )}
         </div>
+
+        <section aria-labelledby="config-settings-title" className="fr-mb-4w">
+          <h2 id="config-settings-title" className="fr-h4">
+            Configuration
+          </h2>
+          <div className={styles.settingsForm}>
+            <ToggleSwitch
+              label="Afficher la tendance (ligne de variation)"
+              checked={!!showTrend}
+              onChange={checked => setValue("settings.showTrend", checked, { shouldDirty: true, shouldValidate: true })}
+            />
+            <Select label="Ordre par defaut des startups" nativeSelectProps={{ ...register("settings.defaultOrder") }}>
+              <option value="stats-first">Stats en premier</option>
+              <option value="alpha">Alphabetique</option>
+              <option value="config">Ordre de la configuration</option>
+            </Select>
+          </div>
+        </section>
 
         <div className={styles.columns}>
           {/* Colonne Groupes */}
@@ -395,6 +416,30 @@ export const AdminConfigForm = ({ initialBetaNames = {}, initialConfig }: Props)
                               nativeTextAreaProps={{ ...register(`groups.${i}.description`) }}
                               state={errors?.groups?.[i]?.description ? "error" : "default"}
                               stateRelatedMessage={errors?.groups?.[i]?.description?.message}
+                            />
+                          </GridCol>
+                          <GridCol base={12} sm={6}>
+                            <ToggleSwitch
+                              label="Afficher dans la navigation (lien direct)"
+                              checked={gValues?.showInNav === true}
+                              onChange={checked =>
+                                setValue(`groups.${i}.showInNav`, checked, {
+                                  shouldDirty: true,
+                                  shouldValidate: true,
+                                })
+                              }
+                            />
+                          </GridCol>
+                          <GridCol base={12} sm={6}>
+                            <ToggleSwitch
+                              label="Afficher en tag sur les cards"
+                              checked={gValues?.showAsTag === true}
+                              onChange={checked =>
+                                setValue(`groups.${i}.showAsTag`, checked, {
+                                  shouldDirty: true,
+                                  shouldValidate: true,
+                                })
+                              }
                             />
                           </GridCol>
                         </Grid>
@@ -609,6 +654,49 @@ export const AdminConfigForm = ({ initialBetaNames = {}, initialConfig }: Props)
                               nativeInputProps={{ ...register(`startups.${si}.northStarOverride`) }}
                               state={errors?.startups?.[si]?.northStarOverride ? "error" : "default"}
                               stateRelatedMessage={errors?.startups?.[si]?.northStarOverride?.message}
+                            />
+                          </GridCol>
+                          <GridCol base={12} sm={6}>
+                            <Input
+                              label="URL Mesure d'impact"
+                              hintText="Repli quand beta.gouv.fr n'expose pas d'impact_url"
+                              nativeInputProps={{
+                                ...register(`startups.${si}.impactUrlOverride`, {
+                                  setValueAs: (v: string) => v?.trim() || undefined,
+                                }),
+                                placeholder: "https://...",
+                                type: "url",
+                              }}
+                              state={errors?.startups?.[si]?.impactUrlOverride ? "error" : "default"}
+                              stateRelatedMessage={errors?.startups?.[si]?.impactUrlOverride?.message}
+                            />
+                          </GridCol>
+                          <GridCol base={12} sm={6}>
+                            <Input
+                              label="URL Budget"
+                              hintText="Repli quand beta.gouv.fr n'expose pas de budget_url"
+                              nativeInputProps={{
+                                ...register(`startups.${si}.budgetUrlOverride`, {
+                                  setValueAs: (v: string) => v?.trim() || undefined,
+                                }),
+                                placeholder: "https://...",
+                                type: "url",
+                              }}
+                              state={errors?.startups?.[si]?.budgetUrlOverride ? "error" : "default"}
+                              stateRelatedMessage={errors?.startups?.[si]?.budgetUrlOverride?.message}
+                            />
+                          </GridCol>
+                          <GridCol base={12}>
+                            <ToggleSwitch
+                              label="OK sans fiche beta.gouv.fr"
+                              helperText="Pour une sous-startup sans page beta.gouv.fr propre"
+                              checked={watchedStartups[si]?.allowNoBeta === true}
+                              onChange={checked =>
+                                setValue(`startups.${si}.allowNoBeta`, checked, {
+                                  shouldDirty: true,
+                                  shouldValidate: true,
+                                })
+                              }
                             />
                           </GridCol>
                           <GridCol base={12}>

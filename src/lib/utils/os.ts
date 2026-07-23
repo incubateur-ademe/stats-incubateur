@@ -41,8 +41,7 @@ const ensureNextEnvVar_: DefaultEnsureNextEnvVar = (envVar, transformerOrDefault
 
   return envVar ?? transformerOrDefaultValue!;
 };
-// TODO use "satisfies"
-export const ensureNextEnvVar = ensureNextEnvVar_;
+export const ensureNextEnvVar: EnsureNextEnvVar = ensureNextEnvVar_;
 
 const ensureApiEnvVar_: DefaultEnsureNextEnvVar = (key, transformerOrDefaultValue, defaultValue) => {
   if (typeof window === "undefined") {

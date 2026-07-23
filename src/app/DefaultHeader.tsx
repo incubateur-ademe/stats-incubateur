@@ -3,17 +3,19 @@ import Header from "@codegouvfr/react-dsfr/Header";
 
 import { Brand } from "@/components/Brand";
 import { config } from "@/config";
+import { type StartupGroupConfig } from "@/startup-types";
 
 import { type EnrichedStartup } from "./_stats/types";
 import { Navigation } from "./Navigation";
 
 interface DefaultHeaderProps {
+  groups: StartupGroupConfig[];
   startups: EnrichedStartup[];
 }
 
-export const DefaultHeader = ({ startups }: DefaultHeaderProps) => (
+export const DefaultHeader = ({ groups, startups }: DefaultHeaderProps) => (
   <Header
-    navigation={config.maintenance ? null : <Navigation startups={startups} />}
+    navigation={config.maintenance ? null : <Navigation startups={startups} groups={groups} />}
     brandTop={<Brand />}
     homeLinkProps={{
       href: "/",
