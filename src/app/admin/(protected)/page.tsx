@@ -14,7 +14,7 @@ const AdminPage = async () => {
   // Fetch les noms beta.gouv.fr pour toutes les startups en parallele
   const betaResults = await Promise.allSettled(
     gistConfig.startups.map(async s => {
-      const beta = await fetchBetaStartup(s.id);
+      const beta = s.allowNoBeta ? null : await fetchBetaStartup(s.id);
       return [s.id, beta?.name ?? null] as const;
     }),
   );

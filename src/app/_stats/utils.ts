@@ -22,7 +22,7 @@ export const orderAndEnrichStartups = async (
 
   const results = await Promise.allSettled(
     enabledStartups.map(async s => {
-      const betaStartup = await fetchBetaStartup(s.id);
+      const betaStartup = s.allowNoBeta ? null : await fetchBetaStartup(s.id);
       return {
         ...s,
         betaNotFound: !betaStartup && !s.allowNoBeta,

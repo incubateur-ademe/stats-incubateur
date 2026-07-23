@@ -33,7 +33,7 @@ export const generateMetadata = async ({ params }: PageProps): Promise<Metadata>
     return { title: "Startup introuvable" };
   }
 
-  const betaStartup = await fetchBetaStartup(startupId);
+  const betaStartup = startup.allowNoBeta ? null : await fetchBetaStartup(startupId);
   const name = betaStartup?.name ?? startup.nameOverride ?? startupId;
   const title = `${name} - Statistiques`;
 
@@ -60,7 +60,7 @@ const StartupPage = async ({ params }: PageProps) => {
     notFound();
   }
 
-  const betaStartup = await fetchBetaStartup(startupId);
+  const betaStartup = startup.allowNoBeta ? null : await fetchBetaStartup(startupId);
   const name = betaStartup?.name ?? startup.nameOverride ?? startupId;
   const website = betaStartup?.link ?? startup.websiteOverride;
 
