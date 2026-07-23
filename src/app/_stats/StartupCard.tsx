@@ -57,7 +57,7 @@ const externalButton = (label: string, url: string | undefined): ButtonProps =>
   url
     ? {
         children: label,
-        linkProps: { href: url, target: "_blank", rel: "noopener noreferrer" },
+        linkProps: { href: url, rel: "noopener noreferrer", target: "_blank" },
         priority: "tertiary",
       }
     : { children: label, disabled: true, priority: "tertiary" };

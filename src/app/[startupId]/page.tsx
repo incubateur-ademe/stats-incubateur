@@ -21,7 +21,7 @@ interface PageProps {
 /** Bouton de lien externe: cliquable si l'URL existe (beta ou surcharge), desactive sinon. */
 const externalButton = (label: string, url: string | undefined): ButtonProps =>
   url
-    ? { children: label, linkProps: { href: url, target: "_blank", rel: "noopener noreferrer" }, priority: "tertiary" }
+    ? { children: label, linkProps: { href: url, rel: "noopener noreferrer", target: "_blank" }, priority: "tertiary" }
     : { children: label, disabled: true, priority: "tertiary" };
 
 export const generateMetadata = async ({ params }: PageProps): Promise<Metadata> => {
@@ -77,7 +77,7 @@ const StartupPage = async ({ params }: PageProps) => {
     externalButton("Stats", statsPageUrl),
     {
       children: "Fiche beta.gouv.fr",
-      linkProps: { href: betaFicheUrl(startupId), target: "_blank", rel: "noopener noreferrer" },
+      linkProps: { href: betaFicheUrl(startupId), rel: "noopener noreferrer", target: "_blank" },
       priority: "tertiary",
     },
   ];
