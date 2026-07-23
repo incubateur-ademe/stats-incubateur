@@ -55,7 +55,11 @@ const dateFormatter = (date: Date, periodicity: keyof typeof FORMATERS = DEFAULT
 /** Bouton de lien externe: cliquable si l'URL existe (beta ou surcharge), desactive sinon. */
 const externalButton = (label: string, url: string | undefined): ButtonProps =>
   url
-    ? { children: label, linkProps: { href: url, target: "_blank" }, priority: "tertiary" }
+    ? {
+        children: label,
+        linkProps: { href: url, target: "_blank", rel: "noopener noreferrer" },
+        priority: "tertiary",
+      }
     : { children: label, disabled: true, priority: "tertiary" };
 
 interface StartupCardProps {
