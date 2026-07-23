@@ -3,6 +3,7 @@ import Accordion from "@codegouvfr/react-dsfr/Accordion";
 import { type ButtonProps } from "@codegouvfr/react-dsfr/Button";
 import ButtonsGroup from "@codegouvfr/react-dsfr/ButtonsGroup";
 import Card from "@codegouvfr/react-dsfr/Card";
+import Tag from "@codegouvfr/react-dsfr/Tag";
 import Tooltip from "@codegouvfr/react-dsfr/Tooltip";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { getISOWeek, getISOWeekYear } from "date-fns";
@@ -16,6 +17,7 @@ import { Icon } from "@/dsfr";
 import { Text } from "@/dsfr/base/Typography";
 
 import { fetchStats } from "./action";
+import { groupHref } from "./links";
 import styles from "./StartupCard.module.scss";
 import { type EnrichedStartup, type StatInput } from "./types";
 
@@ -50,13 +52,24 @@ const dateFormatter = (date: Date, periodicity: keyof typeof FORMATERS = DEFAULT
   return FORMATERS[periodicity].format(date);
 };
 
+/** Bouton de lien externe: cliquable si l'URL existe (beta ou surcharge), desactive sinon. */
+const externalButton = (label: string, url: string | undefined): ButtonProps =>
+  url
+    ? {
+        children: label,
+        linkProps: { href: url, target: "_blank", rel: "noopener noreferrer" },
+        priority: "tertiary",
+      }
+    : { children: label, disabled: true, priority: "tertiary" };
+
 interface StartupCardProps {
   input: StatInput;
   onQuerySettled?: () => void;
+  showTrend: boolean;
   startup: EnrichedStartup;
 }
 
-export function StartupCard({ input, onQuerySettled, startup }: StartupCardProps) {
+export function StartupCard({ input, onQuerySettled, showTrend, startup }: StartupCardProps) {
   const mounted = useHasMounted();
 
   const query = useQuery({
@@ -94,16 +107,27 @@ export function StartupCard({ input, onQuerySettled, startup }: StartupCardProps
     <Card
       title={
         <div className="flex justify-between">
-          <div className="flex gap-[1rem]">
-            {startup.name}
-            {startup.betaNotFound && (
-              <ClientOnly>
-                <Tooltip
-                  title={`Startup "${startup.id}" introuvable sur beta.gouv.fr - l'identifiant a peut-être changé`}
-                >
-                  <Icon icon="fr-icon-warning-fill" size="xl" color="text-mention-grey" />
-                </Tooltip>
-              </ClientOnly>
+          <div className="flex flex-col gap-[0.5rem]">
+            <div className="flex gap-[1rem]">
+              {startup.name}
+              {startup.betaNotFound && (
+                <ClientOnly>
+                  <Tooltip
+                    title={`Startup "${startup.id}" introuvable sur beta.gouv.fr - l'identifiant a peut-être changé`}
+                  >
+                    <Icon icon="fr-icon-warning-fill" size="xl" color="text-mention-grey" />
+                  </Tooltip>
+                </ClientOnly>
+              )}
+            </div>
+            {startup.tags.length > 0 && (
+              <div className="flex flex-wrap gap-[0.25rem]">
+                {startup.tags.map(tag => (
+                  <Tag key={tag.id} small linkProps={{ href: groupHref(tag.id) }}>
+                    {tag.name}
+                  </Tag>
+                ))}
+              </div>
             )}
           </div>
           {!!errorMsg && (
@@ -149,6 +173,7 @@ export function StartupCard({ input, onQuerySettled, startup }: StartupCardProps
               lineId="variation"
               barAxisWidth={100}
               lineValueFormatter={value => `${value}%`}
+              showLine={showTrend}
             />
           ) : (
             <Text variant="xl">Pas de données.</Text>
@@ -158,25 +183,21 @@ export function StartupCard({ input, onQuerySettled, startup }: StartupCardProps
       footer={
         <ButtonsGroup
           alignment="right"
-          buttonsEquisized
+          buttonsSize="small"
           inlineLayoutWhen="always"
           isReverseOrder
-          buttons={[
-            {
-              children: "Détails",
-              linkProps: { href: `/${startup.id}` },
-              priority: "secondary",
-            },
-            ...((startup.website
-              ? [
-                  {
-                    children: "Site",
-                    linkProps: { href: startup.website, target: "_blank" },
-                    priority: "tertiary",
-                  },
-                ]
-              : []) as ButtonProps[]),
-          ]}
+          buttons={
+            [
+              {
+                children: "Détails",
+                linkProps: { href: `/${startup.id}` },
+                priority: "secondary",
+              },
+              externalButton("Stats", startup.website),
+              externalButton("Budget", startup.budgetUrl),
+              externalButton("Mesure d'impact", startup.impactUrl),
+            ] as [ButtonProps, ...ButtonProps[]]
+          }
         />
       }
     />

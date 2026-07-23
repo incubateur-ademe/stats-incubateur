@@ -1,6 +1,6 @@
 import { type FullConfig, type StartupConfig, type StartupGroupConfig } from "@/startup-types";
 
-const GROUP_HEADERS = ["id", "name", "description", "enabled"] as const;
+const GROUP_HEADERS = ["id", "name", "description", "enabled", "showInNav", "showAsTag"] as const;
 const STARTUP_HEADERS = [
   "id",
   "nameOverride",
@@ -8,6 +8,9 @@ const STARTUP_HEADERS = [
   "statsUrl",
   "websiteOverride",
   "northStarOverride",
+  "impactUrlOverride",
+  "budgetUrlOverride",
+  "allowNoBeta",
   "groups",
 ] as const;
 
@@ -71,7 +74,7 @@ const parseCsvLine = (line: string): string[] => {
   return result;
 };
 
-export const parseConfigFromCsv = (csv: string): FullConfig => {
+export const parseConfigFromCsv = (csv: string): Pick<FullConfig, "groups" | "startups"> => {
   const lines = csv.split("\n").map(l => l.trim());
   const groups: StartupGroupConfig[] = [];
   const startups: StartupConfig[] = [];
@@ -93,20 +96,29 @@ export const parseConfigFromCsv = (csv: string): FullConfig => {
 
     const cols = parseCsvLine(line);
 
+    // Les deux en-tetes commencent par "id": on ignore toute ligne d'en-tete, y compris
+    // celles d'un ancien format CSV que la comparaison exacte ci-dessus laisserait passer.
+    if (cols[0] === "id") continue;
+
     if (section === "groups" && cols.length >= 2) {
       groups.push({
         description: cols[2] || undefined,
         enabled: cols[3] !== "false",
         id: cols[0],
         name: cols[1],
+        showAsTag: cols[5] === "true" ? true : undefined,
+        showInNav: cols[4] === "true" ? true : undefined,
       });
     }
 
     if (section === "startups" && cols.length >= 7 && cols[0]) {
       startups.push({
+        allowNoBeta: cols[8] === "true" ? true : undefined,
+        budgetUrlOverride: cols[7] || undefined,
         enabled: cols[2] !== "false",
-        groups: cols[6] ? cols[6].split(";").filter(Boolean) : [],
+        groups: cols[9] ? cols[9].split(";").filter(Boolean) : [],
         id: cols[0],
+        impactUrlOverride: cols[6] || undefined,
         nameOverride: cols[1] || undefined,
         northStarOverride: cols[5] || undefined,
         statsUrl: cols[3] || undefined,

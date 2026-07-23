@@ -1,19 +1,28 @@
 import Badge from "@codegouvfr/react-dsfr/Badge";
 import Header from "@codegouvfr/react-dsfr/Header";
+import { Suspense } from "react";
 
 import { Brand } from "@/components/Brand";
 import { config } from "@/config";
+import { type StartupGroupConfig } from "@/startup-types";
 
 import { type EnrichedStartup } from "./_stats/types";
-import { Navigation } from "./Navigation";
+import { Navigation, NavigationLive } from "./Navigation";
 
 interface DefaultHeaderProps {
+  groups: StartupGroupConfig[];
   startups: EnrichedStartup[];
 }
 
-export const DefaultHeader = ({ startups }: DefaultHeaderProps) => (
+export const DefaultHeader = ({ groups, startups }: DefaultHeaderProps) => (
   <Header
-    navigation={config.maintenance ? null : <Navigation startups={startups} />}
+    navigation={
+      config.maintenance ? null : (
+        <Suspense fallback={<Navigation currentGroup={null} startups={startups} groups={groups} />}>
+          <NavigationLive startups={startups} groups={groups} />
+        </Suspense>
+      )
+    }
     brandTop={<Brand />}
     homeLinkProps={{
       href: "/",

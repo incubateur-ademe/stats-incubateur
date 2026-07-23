@@ -5,7 +5,7 @@ import { Container } from "@/dsfr";
 import { DsfrPage } from "@/dsfr/layout/DsfrPage";
 
 import { GlobalForm } from "./_stats/GlobalForm";
-import { getOrderedStartups } from "./_stats/utils";
+import { getStatsBundle } from "./_stats/utils";
 import { sharedMetadata } from "./shared-metadata";
 
 const url = "/";
@@ -21,17 +21,20 @@ export const metadata: Metadata = {
   },
 };
 
-const Home = async () => {
-  const orderedStartups = await getOrderedStartups();
+const Home = async ({ searchParams }: { searchParams: Promise<{ group?: string }> }) => {
+  const { group } = await searchParams;
+  const { settings, startups } = await getStatsBundle();
+
+  const filtered = group ? startups.filter(s => (s.groups ?? []).includes(group)) : startups;
 
   return (
     <DsfrPage>
       <Container py="4w" fluid px="4w">
         <h2>Statistiques des Startups de l'Incubateur</h2>
-        {orderedStartups.length === 0 ? (
+        {filtered.length === 0 ? (
           <Notice title="Aucune startup configuree pour le moment." />
         ) : (
-          <GlobalForm startups={orderedStartups} />
+          <GlobalForm startups={filtered} showTrend={settings.showTrend} defaultOrder={settings.defaultOrder} />
         )}
       </Container>
     </DsfrPage>

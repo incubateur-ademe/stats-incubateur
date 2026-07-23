@@ -15,7 +15,7 @@ import { config } from "@/config";
 import { DsfrProvider } from "@/dsfr-bootstrap";
 import { DsfrHead, getHtmlAttributes } from "@/dsfr-bootstrap/server-only-index";
 
-import { getOrderedStartups } from "./_stats/utils";
+import { getStatsBundle } from "./_stats/utils";
 import { DefaultFooter } from "./DefaultFooter";
 import { DefaultHeader } from "./DefaultHeader";
 import { QueryProvider } from "./QueryProvider";
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
 const lang = "fr";
 
 const RootLayout = async ({ children }: PropsWithChildren) => {
-  const orderedStartups = await getOrderedStartups();
+  const { groups, startups } = await getStatsBundle();
 
   return (
     <html lang={lang} {...getHtmlAttributes({ lang })} className={cx(styles.app, "snap-y")}>
@@ -77,7 +77,7 @@ const RootLayout = async ({ children }: PropsWithChildren) => {
                     ]}
                   />
                   <div className={styles.app}>
-                    <DefaultHeader startups={orderedStartups} />
+                    <DefaultHeader startups={startups} groups={groups} />
                     <ClientAnimate as="main" id="content" className={styles.content}>
                       {config.maintenance ? <SystemMessageDisplay code="maintenance" noRedirect /> : children}
                     </ClientAnimate>

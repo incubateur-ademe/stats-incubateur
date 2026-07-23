@@ -67,7 +67,9 @@ export const fetchStats = async (startupId: string, input: StatInput): Promise<S
         if (typeof value === "string") {
           return new Date(Date.parse(value));
         } else if (typeof value === "number") {
-          return new Date(value * 1000);
+          // Certaines APIs renvoient des timestamps en secondes, d'autres en millisecondes.
+          // Seuil 1e12: en dessous on suppose des secondes (a multiplier), au-dessus des ms.
+          return new Date(value < 1e12 ? value * 1000 : value);
         } else {
           return null;
         }
@@ -90,7 +92,11 @@ export const fetchStats = async (startupId: string, input: StatInput): Promise<S
   }
 
   // Filtrer les entries avec des dates invalides (null du JSON reviver)
-  const validStats = parsed2.stats.filter((s): s is Stat => s.date instanceof Date && !isNaN(s.date.getTime()));
+  const validStats = parsed2.stats
+    .filter((s): s is Stat => s.date instanceof Date && !isNaN(s.date.getTime()))
+    // Certaines APIs renvoient les points dans le desordre (ou anti-chronologiques):
+    // on force l'ordre chronologique, dont depend le calcul de variation ci-dessous.
+    .sort((a, b) => a.date.getTime() - b.date.getTime());
 
   // set variation for each stat
   const stats = validStats.map((stat, index) => {
