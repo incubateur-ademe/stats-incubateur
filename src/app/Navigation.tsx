@@ -9,12 +9,13 @@ import { groupHref } from "./_stats/links";
 import { type EnrichedStartup } from "./_stats/types";
 
 interface NavigationProps {
+  currentGroup: string | null;
   groups: StartupGroupConfig[];
   startups: EnrichedStartup[];
 }
-export const Navigation = ({ groups, startups }: NavigationProps) => {
+
+export const Navigation = ({ currentGroup, groups, startups }: NavigationProps) => {
   const segment = useSelectedLayoutSegment("default");
-  const currentGroup = useSearchParams().get("group");
 
   return (
     <MainNavigation
@@ -51,4 +52,13 @@ export const Navigation = ({ groups, startups }: NavigationProps) => {
       ]}
     />
   );
+};
+
+/**
+ * useSearchParams impose une Suspense boundary (bailout CSR au prerender statique, ex: /_not-found).
+ * On isole donc la lecture du param group ici; le fallback rend la nav sans etat actif de groupe.
+ */
+export const NavigationLive = (props: Omit<NavigationProps, "currentGroup">) => {
+  const currentGroup = useSearchParams().get("group");
+  return <Navigation {...props} currentGroup={currentGroup} />;
 };
